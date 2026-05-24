@@ -1,13 +1,22 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom'; 
 
 function Login() {
+  const navigate = useNavigate(); 
+
+  
+  const manejarIngreso = (e) => {
+    e.preventDefault(); 
+    navigate('/inicio-miembro'); 
+  };
+
   return (
     <div style={{ maxWidth: '400px', margin: '50px auto', padding: '20px', border: '1px solid #ccc', borderRadius: '8px' }}>
       <h2>Iniciar Sesión</h2>
-      <form style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+      {}
+      <form onSubmit={manejarIngreso} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
         <div>
-          <label style={{ display: 'block', marginBottom: '5px' }}>Correo o Numero de Socio:</label>
-          <input type="text" placeholder="Ej. socio@gym.com" style={{ width: '95%', padding: '8px' }} />
+          <label style={{ display: 'block', marginBottom: '5px' }}>Correo:</label>
+          <input type="text" placeholder="Ej. carlos@gym.com" style={{ width: '95%', padding: '8px' }} />
         </div>
         <div>
           <label style={{ display: 'block', marginBottom: '5px' }}>Contraseña:</label>

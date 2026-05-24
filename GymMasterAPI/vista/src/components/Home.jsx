@@ -1,21 +1,19 @@
 import { Link } from 'react-router-dom';
+import './Home.css';
 
 function Home() {
   return (
-    <div style={{ textAlign: 'center', padding: '50px' }}>
-      <h1>Bienvenido a GymMaster</h1>
-      <p>Sistema de gestión de gimnasio y control de membresías.</p>
-      
-      <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center', gap: '15px' }}>
-        <Link to="/login">
-          <button style={{ padding: '10px 20px', cursor: 'pointer' }}>Iniciar Sesión</button>
-        </Link>
-        <Link to="/registro">
-          <button style={{ padding: '10px 20px', cursor: 'pointer' }}>Registrarse</button>
-        </Link>
+    <div className="home-container">
+      <div className="home-content">
+        <h1 className="home-title">Bienvenido a GymMaster</h1>
+        <p className="home-tagline">Sistema de gestión de gimnasio y control de membresías.</p>
+        
+        <div className="home-actions">
+          <Link to="/login" className="btn-home primary">Iniciar Sesión</Link>
+          <Link to="/registro" className="btn-home secondary">Registrarse</Link>
+        </div>
       </div>
     </div>
   );
 }
-
 export default Home;
