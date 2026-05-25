@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace GymMasterAPI.Models
 {
@@ -20,8 +21,11 @@ namespace GymMasterAPI.Models
 
         public DateTime FechaInscripcion { get; set; } = DateTime.Now;
 
-        public bool IncluyeBoxeo { get; set; }
-        public bool IncluyeDanza { get; set; }
-        public decimal MontoMensual { get; set; }
+        public bool EstaActivo { get; set; } = true;
+
+        public int? MembresiaId { get; set; }
+        
+        [ForeignKey("MembresiaId")]
+        public Membresia? Membresia { get; set; }
     }
 }
