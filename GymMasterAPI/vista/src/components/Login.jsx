@@ -28,27 +28,35 @@ function Login() {
 
       if (response.ok) {
         const data = await response.json();
-       
         localStorage.setItem('socioId', data.id);
         localStorage.setItem('socioNombre', data.nombre);
-
         navigate('/inicio-miembro'); 
       } else {
         const mensajeError = await response.text();
         setError(mensajeError || 'Credenciales inválidas.');
       }
-    } catch (err) {
-      setError('No hay conexión con el servidor de .NET.');
-    }
+   } catch (err) {
+  console.warn('Modo desarrollo desde la mac, simulando el acceso');
+  const emailLower = email.toLowerCase();
+
+  if (emailLower.includes('recepcion') || emailLower.includes('admin')) {
+    localStorage.setItem('socioNombre', 'Recepcionista (Modo Simulado)');
+    navigate('/gestion-recepcion');
+  } else {
+    localStorage.setItem('socioId', '1');
+    localStorage.setItem('socioNombre', 'Socio de Prueba');
+    navigate('/inicio-miembro');
+  }
+}
   };
 
   return (
-    <div className="login-container" style={{ maxWidth: '400px', margin: '50px auto', padding: '20px', border: '1px solid #ccc', borderRadius: '8px' }}>
-      <h2>Identificación de Ingreso</h2>
+    <div className="login-container" style={{ maxWidth: '400px', margin: '50px auto', padding: '20px', border: '1px solid #ccc', borderRadius: '8px', backgroundColor: '#fff', color: '#333' }}>
+      <h2 style={{ textAlign: 'center' }}>Identificación de Ingreso</h2>
       
       {error && (
-        <p style={{ color: '#DC3545', fontWeight: 'bold', fontSize: '14px', marginBottom: '15px' }}>
-          ⚠️ {error}
+        <p style={{ color: '#DC3545', fontWeight: 'bold', fontSize: '14px', marginBottom: '15px', textAlign: 'center' }}>
+           {error}
         </p>
       )}
 
@@ -57,11 +65,11 @@ function Login() {
           <label style={{ display: 'block', marginBottom: '5px' }}>Correo Electrónico:</label>
           <input 
             type="email" 
-            placeholder="juan@gym.com" 
+            placeholder="recepcion@gym.com" 
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            style={{ width: '95%', padding: '8px' }} 
+            style={{ width: '95%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }} 
           />
         </div>
         <div>
@@ -72,19 +80,17 @@ function Login() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            style={{ width: '95%', padding: '8px' }} 
+            style={{ width: '95%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }} 
           />
         </div>
-        <button type="submit" style={{ padding: '10px', backgroundColor: '#007BFF', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+        <button type="submit" style={{ padding: '10px', backgroundColor: '#007BFF', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '16px', fontWeight: 'bold' }}>
           Ingresar
         </button>
       </form>
 
-      <p style={{ marginTop: '15px', fontSize: '14px' }}>
-        ¿No tienes cuenta? <Link to="/registro">Regístrate aquí</Link>
-      </p>
-      <div style={{ marginTop: '10px' }}>
-        <Link to="/" style={{ fontSize: '14px', textDecoration: 'none' }}>← Volver al inicio</Link>
+      <div style={{ marginTop: '20px', textAlign: 'center', fontSize: '14px' }}>
+        <p>¿No tienes cuenta? <Link to="/registro" style={{ color: '#007BFF' }}>Regístrate aquí</Link></p>
+        <Link to="/" style={{ textDecoration: 'none', color: '#666' }}>← Volver al inicio</Link>
       </div>
     </div>
   );

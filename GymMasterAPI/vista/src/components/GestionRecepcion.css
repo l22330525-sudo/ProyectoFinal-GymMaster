@@ -1,0 +1,55 @@
+.recepcion-container {
+  min-height: 100vh;
+  background: #1a1a1a; 
+  color: white;
+}
+
+.recepcion-content {
+  padding: 40px 5%;
+}
+
+.recepcion-header h1 {
+  font-size: 2.5rem;
+  color: #aa3bff; 
+  margin-bottom: 20px;
+}
+
+.search-box input {
+  width: 100%;
+  max-width: 500px;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #444;
+  background: #2a2a2a;
+  color: white;
+  margin-bottom: 30px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 15px;
+  overflow: hidden;
+}
+
+th, td {
+  padding: 15px;
+  text-align: left;
+  border-bottom: 1px solid #333;
+}
+
+.badge.activo { color: #28a745; font-weight: bold; }
+.badge.vencido { color: #ff4d4d; font-weight: bold; }
+
+.btn-checkin, .btn-pago {
+  padding: 8px 15px;
+  margin-right: 10px;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.btn-checkin { background: #aa3bff; color: white; }
+.btn-pago { background: transparent; border: 1px solid #aa3bff; color: #aa3bff; }
