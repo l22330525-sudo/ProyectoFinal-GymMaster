@@ -2,7 +2,6 @@ using System.ComponentModel.DataAnnotations;
 
 namespace GymMasterAPI.Dtos
 {
-    // El que recibes cuando el administrador crea un nuevo plan en el sistema
     public class CrearMembresiaDto
     {
         [Required]

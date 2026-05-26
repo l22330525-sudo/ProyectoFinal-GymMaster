@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using GymMasterAPI.Data;
 using GymMasterAPI.Models;
+using GymMasterAPI.Dtos;
 
 namespace GymMasterAPI.Controllers
 {
@@ -16,17 +17,14 @@ namespace GymMasterAPI.Controllers
             _context = context;
         }
 
-        // GET: api/Miembros
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Miembro>>> GetMiembros()
         {
-            // Usamos Include para traer los datos de la Membresia relacionada
             return await _context.Miembros
                                  .Include(m => m.Membresia)
                                  .ToListAsync();
         }
 
-        // GET: api/Miembros/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Miembro>> GetMiembro(int id)
         {
@@ -40,6 +38,58 @@ namespace GymMasterAPI.Controllers
             }
 
             return miembro;
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> CrearMiembro([FromBody] RegistrarMiembroDto miembroDto)
+        {
+            if (miembroDto == null)
+            {
+                return BadRequest("Los datos del miembro no son válidos.");
+            }
+
+            var nuevoMiembro = new Miembro
+            {
+                Nombre = miembroDto.Nombre,
+                Email = miembroDto.Email,
+                Password = miembroDto.Password,
+                FechaInscripcion = DateTime.Now,
+                EstaActivo = true,
+                MembresiaId = miembroDto.MembresiaId
+            };
+
+            _context.Miembros.Add(nuevoMiembro);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetMiembro), new { id = nuevoMiembro.Id }, nuevoMiembro);
+        }
+
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
+        {
+            if (loginDto == null || string.IsNullOrEmpty(loginDto.Email) || string.IsNullOrEmpty(loginDto.Password))
+            {
+                return BadRequest("Por favor, llena todos los campos.");
+            }
+
+            var miembro = await _context.Miembros
+                .FirstOrDefaultAsync(m => m.Email == loginDto.Email && m.Password == loginDto.Password);
+
+            if (miembro == null)
+            {
+                return Unauthorized("Correo electrónico o contraseña incorrectos.");
+            }
+
+            if (!miembro.EstaActivo)
+            {
+                return BadRequest("Tu cuenta se encuentra inactiva. Acude a recepción.");
+            }
+
+            return Ok(new { 
+                id = miembro.Id, 
+                nombre = miembro.Nombre, 
+                email = miembro.Email 
+            });
         }
     }
 }

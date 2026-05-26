@@ -7,6 +7,6 @@ namespace GymMasterAPI.Dtos
         public string Email { get; set; } = string.Empty;
         public DateTime FechaInscripcion { get; set; }
         public bool EstaActivo { get; set; }
-        public string? MembresiaNombre { get; set; } // Solo mostramos el nombre del plan contratado
+        public string? MembresiaNombre { get; set; }
     }
 }

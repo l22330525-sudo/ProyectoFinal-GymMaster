@@ -12,5 +12,6 @@ namespace GymMasterAPI.Data
         public DbSet<Miembro> Miembros { get; set; }
         public DbSet<Instructor> Instructores { get; set; }
         public DbSet<Membresia> Membresias { get; set; }
+        public DbSet<Asistencia> Asistencias { get; set; }
     }
 }
