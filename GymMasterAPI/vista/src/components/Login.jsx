@@ -45,20 +45,7 @@ function Login() {
         setError(mensajeError || 'Credenciales inválidas.');
       }
     } catch (err) {
-      // Modo desarrollo / simulación por si el backend está apagado
-      console.warn('Modo desarrollo: simulando acceso');
-      const emailLower = email.toLowerCase();
-
-      if (emailLower.includes('recepcion') || emailLower.includes('admin')) {
-        localStorage.setItem('socioNombre', 'Recepcionista (Simulado)');
-        localStorage.setItem('socioRol', 'Recepcionista');
-        navigate('/gestion-recepcion');
-      } else {
-        localStorage.setItem('socioId', '1');
-        localStorage.setItem('socioNombre', 'Socio de Prueba');
-        localStorage.setItem('socioRol', 'Cliente');
-        navigate('/inicio-miembro');
-      }
+      setError('No se pudo conectar con el servidor. Verifica que la API esté corriendo.');
     }
   };
 

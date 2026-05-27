@@ -40,10 +40,8 @@ function InicioMiembro() {
         setMensaje(data || 'Ocurrió un error al registrar la asistencia.');
       }
     } catch (error) {
-      console.warn('Simulacion de asistencia, para trabajar en la mac jaja');
-      setTipoMensaje('exito');
-      setMensaje('¡Asistencia registrada con éxito! Bienvenido al gimnasio.');
-      setTimeout(() => setAsistenciaRegistrada(true), 1500);
+      setTipoMensaje('error');
+      setMensaje('No se pudo conectar con el servidor. Intenta de nuevo.');
     }
   };
 

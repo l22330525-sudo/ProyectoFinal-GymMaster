@@ -2,21 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './GestionRecepcion.css';
 
-const miembrosFallback = [
-  { id: 1, nombre: "Flacow Prueba", email: "flacow@gym.com", estaActivo: true, membresia: { nombre: "Semanal + Boxeo" } },
-  { id: 2, nombre: "Cristopher Valdez", email: "cris@gym.com", estaActivo: false, membresia: { nombre: "Mensual" } },
-];
-
-const membresiasFallback = [
-  { id: 1, nombre: 'Plan Diario' },
-  { id: 2, nombre: 'Plan Semanal' },
-  { id: 3, nombre: 'Plan Mensual' },
-];
-
 function GestionRecepcion() {
   const [busqueda, setBusqueda] = useState('');
   const [miembros, setMiembros] = useState([]);
   const [membresias, setMembresias] = useState([]);
+  const [errorCarga, setErrorCarga] = useState('');
   
   const [modalAbierto, setModalAbierto] = useState(false);
   const [editandoId, setEditandoId] = useState(null);
@@ -34,22 +24,16 @@ function GestionRecepcion() {
     fetch('http://localhost:5027/api/Miembros')
       .then(res => res.json())
       .then(data => setMiembros(data))
-      .catch(() => {
-        console.warn('Modo local: cargando socios de respaldo');
-        setMiembros(miembrosFallback);
-      });
+      .catch(() => setErrorCarga('No se pudo conectar con el servidor. Verifica que la API esté corriendo.'));
   };
 
   useEffect(() => {
     cargarMiembros();
-    
+
     fetch('http://localhost:5027/api/Membresias')
       .then(res => res.json())
       .then(data => setMembresias(data))
-      .catch(() => {
-        console.warn('Modo local: cargando membresías de respaldo');
-        setMembresias(membresiasFallback);
-      });
+      .catch(() => setErrorCarga('No se pudo conectar con el servidor. Verifica que la API esté corriendo.'));
   }, []);
 
   const miembrosFiltrados = miembros.filter(m =>
@@ -121,8 +105,7 @@ function GestionRecepcion() {
         setMensaje(`Error en servidor: ${errorMsg}`);
       }
     } catch (err) {
-      setMensaje('¡Operación realizada con éxito!');
-      setTimeout(() => setModalAbierto(false), 1500);
+      setMensaje('No se pudo conectar con el servidor.');
     }
   };
 
@@ -140,7 +123,7 @@ function GestionRecepcion() {
         alert('Ocurrió un error al intentar eliminar al socio.');
       }
     } catch (err) {
-      setMiembros(miembros.filter(m => m.id !== id));
+      alert('No se pudo conectar con el servidor.');
     }
   };
 
@@ -154,7 +137,7 @@ function GestionRecepcion() {
       const data = await response.json();
       alert(data.mensaje || 'Asistencia registrada con éxito.');
     } catch (error) {
-      alert('¡Asistencia registrada con éxito!');
+      alert('No se pudo conectar con el servidor.');
     }
   };
 
@@ -164,11 +147,20 @@ function GestionRecepcion() {
         <div className="logo-gym">GYM <span>MASTER</span></div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
           <div className="user-role">Panel de Recepción</div>
+          <button onClick={() => navigate('/gestion-instructores')} style={{ background: 'none', border: '1px solid #aa3bff', color: '#aa3bff', padding: '6px 16px', borderRadius: '6px', cursor: 'pointer' }}>
+            Instructores
+          </button>
           <button onClick={handleLogout} style={{ background: 'none', border: '1px solid #ff4d4d', color: '#ff4d4d', padding: '6px 16px', borderRadius: '6px', cursor: 'pointer' }}>
             Salir
           </button>
         </div>
       </nav>
+
+      {errorCarga && (
+        <div style={{ background: '#dc3545', color: 'white', padding: '12px 20px', textAlign: 'center', fontWeight: 'bold' }}>
+          {errorCarga}
+        </div>
+      )}
 
       <div className="recepcion-content">
         <header className="recepcion-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px', marginBottom: '20px' }}>

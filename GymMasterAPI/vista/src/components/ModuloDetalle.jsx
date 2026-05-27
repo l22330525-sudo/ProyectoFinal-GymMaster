@@ -14,12 +14,6 @@ const infoModulos = {
       { dia: 'Viernes',           hora: '8:00 AM - 9:30 AM',  nivel: 'Avanzado' },
       { dia: 'Sábado',            hora: '9:00 AM - 11:00 AM', nivel: 'Todos los niveles' },
     ],
-    instructorFallback: {
-      nombreCompleto: 'Carlos "El Toro" Cordova',
-      especialidad: 'Boxeo, Ser mala copa',
-      experiencia: '8 años de experiencia',
-      turno: 'Matutino y Vespertino',
-    },
   },
   zumba: {
     nombre: 'Módulo de Zumba',
@@ -32,12 +26,6 @@ const infoModulos = {
       { dia: 'Miércoles',       hora: '7:00 PM - 8:00 PM',   nivel: 'Intermedio' },
       { dia: 'Sábado',          hora: '10:00 AM - 11:30 AM', nivel: 'Todos los niveles' },
     ],
-    instructorFallback: {
-      nombreCompleto: 'Valeria Ríos',
-      especialidad: 'Zumba, salsa y ritmos latinos',
-      experiencia: '5 años de experiencia',
-      turno: 'Matutino y Vespertino',
-    },
   },
 };
 
@@ -45,6 +33,7 @@ function ModuloDetalle() {
   const { tipo } = useParams();
   const navigate = useNavigate();
   const [instructor, setInstructor] = useState(null);
+  const [cargandoInstructor, setCargandoInstructor] = useState(true);
   const [mensaje, setMensaje] = useState('');
   const [tipoMensaje, setTipoMensaje] = useState('');
   const [registrando, setRegistrando] = useState(false);
@@ -60,6 +49,7 @@ function ModuloDetalle() {
 
   useEffect(() => {
     if (!modulo) return;
+    setCargandoInstructor(true);
     fetch('http://localhost:5027/api/Instructores')
       .then(res => res.json())
       .then(data => {
@@ -68,15 +58,13 @@ function ModuloDetalle() {
           i.especialidad.toLowerCase().includes(palabra) ||
           i.nombreCompleto.toLowerCase().includes(palabra)
         );
-        setInstructor(encontrado ?? modulo.instructorFallback);
+        setInstructor(encontrado ?? null);
       })
-      .catch(() => {
-        console.warn('Desde la mac, usando instructor de respaldo');
-        setInstructor(modulo.instructorFallback);
-      });
+      .catch(() => setInstructor(null))
+      .finally(() => setCargandoInstructor(false));
   }, [tipo]);
 
-  if (!modulo || !instructor) return null;
+  if (!modulo) return null;
 
   const registrarAsistencia = async () => {
     setRegistrando(true);
@@ -151,10 +139,17 @@ function ModuloDetalle() {
           <div className="card-derecha">
             <div className="card-modulo">
               <h2 style={{ color: modulo.color }}> Instructor</h2>
-              <div className="instructor-nombre">{instructor.nombreCompleto}</div>
-              <div className="instructor-dato">🥊 {instructor.especialidad}</div>
-              <div className="instructor-dato"> {instructor.experiencia ?? 'Certificado'}</div>
-              <div className="instructor-dato"> Turno: {instructor.turno}</div>
+              {cargandoInstructor ? (
+                <p style={{ color: '#bbb' }}>Cargando...</p>
+              ) : instructor ? (
+                <>
+                  <div className="instructor-nombre">{instructor.nombreCompleto}</div>
+                  <div className="instructor-dato">🥊 {instructor.especialidad}</div>
+                  <div className="instructor-dato"> Turno: {instructor.turno}</div>
+                </>
+              ) : (
+                <p style={{ color: '#bbb' }}>No hay instructor asignado todavía.</p>
+              )}
             </div>
 
             <div
