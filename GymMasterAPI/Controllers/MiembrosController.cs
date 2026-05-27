@@ -88,8 +88,54 @@ namespace GymMasterAPI.Controllers
             return Ok(new { 
                 id = miembro.Id, 
                 nombre = miembro.Nombre, 
-                email = miembro.Email 
+                email = miembro.Email,
+                rol = miembro.Rol 
             });
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> ActualizarMiembro(int id, [FromBody] ActualizarMiembroDto miembroDto)
+        {
+            if (miembroDto == null)
+            {
+                return BadRequest("Los datos proporcionados no son válidos.");
+            }
+
+            var miembro = await _context.Miembros.FindAsync(id);
+            if (miembro == null)
+            {
+                return NotFound("Socio no encontrado en el sistema.");
+            }
+
+            miembro.Nombre = miembroDto.Nombre;
+            miembro.Email = miembroDto.Email;
+            miembro.EstaActivo = miembroDto.EstaActivo;
+            miembro.MembresiaId = miembroDto.MembresiaId;
+
+            if (!string.IsNullOrEmpty(miembroDto.Password))
+            {
+                miembro.Password = miembroDto.Password;
+            }
+
+            _context.Entry(miembro).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { mensaje = "¡Socio actualizado con éxito en la base de datos!" });
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> EliminarMiembro(int id)
+        {
+            var miembro = await _context.Miembros.FindAsync(id);
+            if (miembro == null)
+            {
+                return NotFound("Socio no encontrado.");
+            }
+
+            _context.Miembros.Remove(miembro);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { mensaje = "¡Socio eliminado de forma permanente!" });
         }
     }
 }

@@ -28,26 +28,38 @@ function Login() {
 
       if (response.ok) {
         const data = await response.json();
+        
+        // Guardamos los datos reales que vienen de la Base de Datos
         localStorage.setItem('socioId', data.id);
         localStorage.setItem('socioNombre', data.nombre);
-        navigate('/inicio-miembro'); 
+        localStorage.setItem('socioRol', data.rol); // Guardamos el rol real
+
+        // Redirección profesional basada en el Rol real
+        if (data.rol === 'Admin' || data.rol === 'Recepcionista') {
+          navigate('/gestion-recepcion');
+        } else {
+          navigate('/inicio-miembro');
+        }
       } else {
         const mensajeError = await response.text();
         setError(mensajeError || 'Credenciales inválidas.');
       }
-   } catch (err) {
-  console.warn('Modo desarrollo desde la mac, simulando el acceso');
-  const emailLower = email.toLowerCase();
+    } catch (err) {
+      // Modo desarrollo / simulación por si el backend está apagado
+      console.warn('Modo desarrollo: simulando acceso');
+      const emailLower = email.toLowerCase();
 
-  if (emailLower.includes('recepcion') || emailLower.includes('admin')) {
-    localStorage.setItem('socioNombre', 'Recepcionista (Modo Simulado)');
-    navigate('/gestion-recepcion');
-  } else {
-    localStorage.setItem('socioId', '1');
-    localStorage.setItem('socioNombre', 'Socio de Prueba');
-    navigate('/inicio-miembro');
-  }
-}
+      if (emailLower.includes('recepcion') || emailLower.includes('admin')) {
+        localStorage.setItem('socioNombre', 'Recepcionista (Simulado)');
+        localStorage.setItem('socioRol', 'Recepcionista');
+        navigate('/gestion-recepcion');
+      } else {
+        localStorage.setItem('socioId', '1');
+        localStorage.setItem('socioNombre', 'Socio de Prueba');
+        localStorage.setItem('socioRol', 'Cliente');
+        navigate('/inicio-miembro');
+      }
+    }
   };
 
   return (
@@ -65,7 +77,7 @@ function Login() {
           <label style={{ display: 'block', marginBottom: '5px' }}>Correo Electrónico:</label>
           <input 
             type="email" 
-            placeholder="recepcion@gym.com" 
+            placeholder="correo@ejemplo.com" 
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
