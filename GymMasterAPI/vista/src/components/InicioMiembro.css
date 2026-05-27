@@ -1,0 +1,144 @@
+.inicio-miembro-page {
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), 
+              url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTaRvXpqEBf5CFim45627JFWLBiUEO9EvDP7w&s');
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+
+.navbar-miembro {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 5%;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.logo-gym {
+  color: white;
+  font-size: 2rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.logo-gym span {
+  color: #aa3bff; 
+}
+
+.nav-links {
+  display: flex;
+  gap: 20px;
+}
+
+.nav-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 8px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.nav-btn:hover {
+  background: #aa3bff;
+  border-color: #aa3bff;
+}
+
+.btn-salir {
+  border-color: #ff4d4d;
+  color: #ff4d4d;
+}
+.hero-miembro {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  padding-left: 6%; 
+}
+
+.hero-content-left {
+  max-width: 800px; 
+  text-align: left;
+}
+
+.welcome-text {
+  color: white;
+  font-size: 5rem;
+  font-weight: 900;
+  margin-bottom: 0;
+  line-height: 1.1;
+}
+
+.welcome-text span {
+  color: #aa3bff; 
+}
+
+.welcome-sub {
+  color: #ccc;
+  font-style: italic;
+  font-size: 1.3rem;
+  margin-top: 10px;
+  margin-bottom: 40px;
+}
+
+.modules-grid {
+  display: flex;
+  gap: 25px;
+}
+
+.mod-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 30px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  width: 300px;
+  transition: 0.3s;
+}
+
+.mod-card:hover {
+  border-color: #aa3bff;
+  transform: translateY(-5px);
+}
+
+.mod-badge {
+  background: #aa3bff;
+  color: white;
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.mod-card h3 {
+  color: white;
+  font-size: 1.4rem;
+  margin-bottom: 8px;
+}
+
+.mod-card p {
+  color: #bbb;
+  font-size: 0.9rem;
+  margin-bottom: 25px;
+}
+
+.btn-enter {
+  width: 100%;
+  padding: 10px;
+  background: transparent;
+  color: #aa3bff;
+  border: 1px solid #aa3bff;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+}

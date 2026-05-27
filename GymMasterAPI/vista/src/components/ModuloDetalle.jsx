@@ -1,0 +1,190 @@
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import './ModuloDetalle.css';
+
+const infoModulos = {
+  boxeo: {
+    nombre: 'Módulo de Boxeo',
+    descripcion: 'Aprende técnicas de defensa personal, mejora tu condición física y libera el estrés.',
+    badge: 'BX',
+    color: '#aa3bff',
+    horarios: [
+      { dia: 'Lunes y Miércoles', hora: '7:00 AM - 8:30 AM',  nivel: 'Principiante' },
+      { dia: 'Lunes y Miércoles', hora: '6:00 PM - 7:30 PM',  nivel: 'Intermedio' },
+      { dia: 'Viernes',           hora: '8:00 AM - 9:30 AM',  nivel: 'Avanzado' },
+      { dia: 'Sábado',            hora: '9:00 AM - 11:00 AM', nivel: 'Todos los niveles' },
+    ],
+    instructorFallback: {
+      nombreCompleto: 'Carlos "El Toro" Cordova',
+      especialidad: 'Boxeo, Ser mala copa',
+      experiencia: '8 años de experiencia',
+      turno: 'Matutino y Vespertino',
+    },
+  },
+  zumba: {
+    nombre: 'Módulo de Zumba',
+    descripcion: 'Baila, quema calorías y diviértete con ritmos latinos. Clases para todos los niveles.',
+    badge: 'ZB',
+    color: '#ff3b9a',
+    horarios: [
+      { dia: 'Martes y Jueves', hora: '7:00 AM - 8:00 AM',   nivel: 'Todos los niveles' },
+      { dia: 'Martes y Jueves', hora: '5:00 PM - 6:00 PM',   nivel: 'Principiante' },
+      { dia: 'Miércoles',       hora: '7:00 PM - 8:00 PM',   nivel: 'Intermedio' },
+      { dia: 'Sábado',          hora: '10:00 AM - 11:30 AM', nivel: 'Todos los niveles' },
+    ],
+    instructorFallback: {
+      nombreCompleto: 'Valeria Ríos',
+      especialidad: 'Zumba, salsa y ritmos latinos',
+      experiencia: '5 años de experiencia',
+      turno: 'Matutino y Vespertino',
+    },
+  },
+};
+
+function ModuloDetalle() {
+  const { tipo } = useParams();
+  const navigate = useNavigate();
+  const [instructor, setInstructor] = useState(null);
+  const [mensaje, setMensaje] = useState('');
+  const [tipoMensaje, setTipoMensaje] = useState('');
+  const [registrando, setRegistrando] = useState(false);
+
+  const modulo = infoModulos[tipo];
+  const socioNombre = localStorage.getItem('socioNombre');
+  const socioId = localStorage.getItem('socioId');
+
+  useEffect(() => {
+    if (!socioId) navigate('/login');
+    if (!modulo) navigate('/inicio-miembro');
+  }, []);
+
+  useEffect(() => {
+    if (!modulo) return;
+    fetch('http://localhost:5027/api/Instructores')
+      .then(res => res.json())
+      .then(data => {
+        const palabra = tipo === 'boxeo' ? 'box' : 'zumba';
+        const encontrado = data.find(i =>
+          i.especialidad.toLowerCase().includes(palabra) ||
+          i.nombreCompleto.toLowerCase().includes(palabra)
+        );
+        setInstructor(encontrado ?? modulo.instructorFallback);
+      })
+      .catch(() => {
+        console.warn('Desde la mac, usando instructor de respaldo');
+        setInstructor(modulo.instructorFallback);
+      });
+  }, [tipo]);
+
+  if (!modulo || !instructor) return null;
+
+  const registrarAsistencia = async () => {
+    setRegistrando(true);
+    setMensaje('');
+    try {
+      const response = await fetch('http://localhost:5027/api/Asistencias/registrar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(parseInt(socioId)),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setTipoMensaje('exito');
+        setMensaje(`¡Asistencia al ${modulo.nombre} registrada con éxito!`);
+      } else {
+        setTipoMensaje('error');
+        setMensaje(data || 'Error al registrar.');
+      }
+    } catch {
+      setTipoMensaje('exito');
+      setMensaje(`¡Asistencia al ${modulo.nombre} registrada! (modo simulado)`);
+    } finally {
+      setRegistrando(false);
+    }
+  };
+
+  return (
+    <div className="modulo-page">
+      <nav className="modulo-navbar">
+        <div className="modulo-logo">
+          GYM <span>MASTER</span>
+        </div>
+        <button className="btn-volver" onClick={() => navigate('/inicio-miembro')}>
+          ← Volver
+        </button>
+      </nav>
+
+      <div className="modulo-content">
+        <div className="modulo-header">
+          <div
+            className="modulo-badge-grande"
+            style={{ background: modulo.color }}
+          >
+            {modulo.badge}
+          </div>
+          <div>
+            <h1>{modulo.nombre}</h1>
+            <p>{modulo.descripcion}</p>
+          </div>
+        </div>
+
+        <div className="modulo-grid">
+          <div className="card-modulo">
+            <h2 style={{ color: modulo.color }}> Horarios</h2>
+            {modulo.horarios.map((h, i) => (
+              <div key={i} className="horario-item">
+                <div className="horario-dia">{h.dia}</div>
+                <div className="horario-hora">{h.hora}</div>
+                <span
+                  className="horario-nivel"
+                  style={{
+                    background: `${modulo.color}33`,
+                    color: modulo.color,
+                  }}
+                >
+                  {h.nivel}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <div className="card-derecha">
+            <div className="card-modulo">
+              <h2 style={{ color: modulo.color }}> Instructor</h2>
+              <div className="instructor-nombre">{instructor.nombreCompleto}</div>
+              <div className="instructor-dato">🥊 {instructor.especialidad}</div>
+              <div className="instructor-dato"> {instructor.experiencia ?? 'Certificado'}</div>
+              <div className="instructor-dato"> Turno: {instructor.turno}</div>
+            </div>
+
+            <div
+              className="card-modulo card-registro"
+              style={{ border: `1px solid ${modulo.color}` }}
+            >
+              <h2 style={{ color: modulo.color }}> Registrar Asistencia</h2>
+              <p style={{ color: '#bbb', fontSize: '0.9rem' }}>
+                Hola <strong style={{ color: 'white' }}>{socioNombre}</strong>,
+                confirma tu entrada a la clase de hoy.
+              </p>
+              <button
+                className="btn-confirmar"
+                style={{ background: modulo.color }}
+                onClick={registrarAsistencia}
+                disabled={registrando}
+              >
+                {registrando ? 'Registrando...' : 'Confirmar Entrada'}
+              </button>
+              {mensaje && (
+                <p className={`mensaje-registro mensaje-${tipoMensaje}`}>
+                  {mensaje}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default ModuloDetalle;
