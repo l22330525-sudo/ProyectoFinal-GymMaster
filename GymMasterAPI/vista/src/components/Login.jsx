@@ -29,12 +29,10 @@ function Login() {
       if (response.ok) {
         const data = await response.json();
         
-        // Guardamos los datos reales que vienen de la Base de Datos
         localStorage.setItem('socioId', data.id);
         localStorage.setItem('socioNombre', data.nombre);
-        localStorage.setItem('socioRol', data.rol); // Guardamos el rol real
+        localStorage.setItem('socioRol', data.rol);
 
-        // Redirección profesional basada en el Rol real
         if (data.rol === 'Admin' || data.rol === 'Recepcionista') {
           navigate('/gestion-recepcion');
         } else {
