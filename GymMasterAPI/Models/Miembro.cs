@@ -8,6 +8,8 @@ namespace GymMasterAPI.Models
         [Key] 
         public int Id { get; set; }
 
+        public string Rol { get; set; } = "Cliente";
+
         [Required(ErrorMessage = "El nombre es obligatorio")]
         [MaxLength(100)]
         public string Nombre { get; set; } = string.Empty;

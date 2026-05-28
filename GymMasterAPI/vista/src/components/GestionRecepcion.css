@@ -1,55 +1,49 @@
-.recepcion-container {
-  min-height: 100vh;
-  background: #1a1a1a; 
-  color: white;
+:root {
+  --primary: #aa3bff;
+  --bg: #0f0f0f;
+  --card-bg: #1a1a1a;
+  --text: #efefef;
 }
 
-.recepcion-content {
-  padding: 40px 5%;
-}
+.recepcion-container { background: var(--bg); min-height: 100vh; color: var(--text); font-family: sans-serif; }
 
-.recepcion-header h1 {
-  font-size: 2.5rem;
-  color: #aa3bff; 
-  margin-bottom: 20px;
-}
+.navbar-admin { background: #000; padding: 1rem 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--primary); }
+.logo-gym { font-size: 1.5rem; font-weight: bold; }
+.logo-gym span { color: var(--primary); }
+.nav-actions { display: flex; gap: 20px; align-items: center; }
+.tabs-admin { display: flex; background: #222; border-radius: 8px; padding: 4px; }
+.tabs-admin button { background: none; border: none; color: #888; padding: 8px 16px; cursor: pointer; border-radius: 6px; transition: 0.3s; }
+.tabs-admin button.active { background: var(--primary); color: white; }
 
-.search-box input {
-  width: 100%;
-  max-width: 500px;
-  padding: 12px;
-  border-radius: 8px;
-  border: 1px solid #444;
-  background: #2a2a2a;
-  color: white;
-  margin-bottom: 30px;
-}
+.recepcion-content { padding: 30px 5%; }
+.top-bar { display: flex; gap: 15px; margin-bottom: 30px; }
+.main-search { flex: 1; background: var(--card-bg); border: 1px solid #333; padding: 12px; border-radius: 8px; color: white; }
+.btn-add-main { background: #28a745; color: white; border: none; padding: 0 25px; border-radius: 8px; font-weight: bold; cursor: pointer; }
 
-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 15px;
-  overflow: hidden;
-}
 
-th, td {
-  padding: 15px;
-  text-align: left;
-  border-bottom: 1px solid #333;
-}
+.table-wrapper { background: var(--card-bg); border-radius: 12px; overflow: hidden; border: 1px solid #333; }
+table { width: 100%; border-collapse: collapse; }
+th { background: #252525; padding: 15px; text-align: left; color: var(--primary); font-size: 0.9rem; }
+td { padding: 15px; border-bottom: 1px solid #222; font-size: 0.95rem; }
 
-.badge.activo { color: #28a745; font-weight: bold; }
-.badge.vencido { color: #ff4d4d; font-weight: bold; }
+.status-pill { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; }
+.status-pill.activo { background: rgba(40, 167, 69, 0.15); color: #28a745; }
+.status-pill.vencido { background: rgba(220, 53, 69, 0.15); color: #ff4d4d; }
 
-.btn-checkin, .btn-pago {
-  padding: 8px 15px;
-  margin-right: 10px;
-  border-radius: 5px;
-  border: none;
-  cursor: pointer;
-  font-weight: bold;
-}
 
-.btn-checkin { background: #aa3bff; color: white; }
-.btn-pago { background: transparent; border: 1px solid #aa3bff; color: #aa3bff; }
+.btn-check { background: var(--primary); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-right: 5px; }
+.btn-edit { background: #ffc107; color: #000; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-right: 5px; }
+.btn-del { background: #dc3545; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; }
+
+
+.staff-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px; }
+.staff-card { background: var(--card-bg); padding: 25px; border-radius: 15px; text-align: center; border: 1px solid #333; }
+.staff-circle { width: 50px; height: 50px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; font-size: 1.5rem; font-weight: bold; }
+.staff-tag { display: inline-block; background: #333; padding: 2px 10px; border-radius: 10px; font-size: 0.7rem; margin-top: 10px; }
+
+
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+.modal-box { background: #222; padding: 30px; border-radius: 15px; width: 400px; border: 1px solid var(--primary); }
+.modal-box input, .modal-box select { width: 95%; padding: 10px; margin-bottom: 15px; background: #111; border: 1px solid #444; color: white; border-radius: 6px; }
+.modal-footer { display: flex; gap: 10px; }
+.btn-save { flex: 1; background: var(--primary); color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; }

@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GymMasterAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260525232455_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260527052907_AgregarRolesDB")]
+    partial class AgregarRolesDB
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,6 +24,27 @@ namespace GymMasterAPI.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("GymMasterAPI.Models.Asistencia", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("FechaHora")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("MiembroId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MiembroId");
+
+                    b.ToTable("Asistencias");
+                });
 
             modelBuilder.Entity("GymMasterAPI.Models.Instructor", b =>
                 {
@@ -110,11 +131,26 @@ namespace GymMasterAPI.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Rol")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("MembresiaId");
 
                     b.ToTable("Miembros");
+                });
+
+            modelBuilder.Entity("GymMasterAPI.Models.Asistencia", b =>
+                {
+                    b.HasOne("GymMasterAPI.Models.Miembro", "Miembro")
+                        .WithMany()
+                        .HasForeignKey("MiembroId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Miembro");
                 });
 
             modelBuilder.Entity("GymMasterAPI.Models.Miembro", b =>

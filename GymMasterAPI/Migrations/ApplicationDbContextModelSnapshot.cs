@@ -69,6 +69,24 @@ namespace GymMasterAPI.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Instructores");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Especialidad = "Boxeo",
+                            EstaActivo = true,
+                            NombreCompleto = "Carlos Cordova",
+                            Turno = "Matutino y Vespertino"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Especialidad = "Zumba y ritmos latinos",
+                            EstaActivo = true,
+                            NombreCompleto = "Valeria Ríos",
+                            Turno = "Matutino y Vespertino"
+                        });
                 });
 
             modelBuilder.Entity("GymMasterAPI.Models.Membresia", b =>
@@ -96,6 +114,56 @@ namespace GymMasterAPI.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Membresias");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Costo = 50m,
+                            Descripcion = "Acceso completo al gimnasio por un día. Ideal para visitantes o prueba.",
+                            DuracionDias = 1,
+                            Nombre = "Plan Diario"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Costo = 200m,
+                            Descripcion = "Una semana completa de entrenamiento sin restricciones.",
+                            DuracionDias = 7,
+                            Nombre = "Plan Semanal"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Costo = 600m,
+                            Descripcion = "Un mes entero con acceso completo. La mejor opción para resultados reales.",
+                            DuracionDias = 30,
+                            Nombre = "Plan Mensual"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Costo = 150m,
+                            Descripcion = "Acceso diario al gimnasio más un módulo de Boxeo o Zumba a tu elección.",
+                            DuracionDias = 1,
+                            Nombre = "Diario + Módulo"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Costo = 300m,
+                            Descripcion = "Una semana con acceso al gimnasio y clases de Boxeo o Zumba incluidas.",
+                            DuracionDias = 7,
+                            Nombre = "Semanal + Módulo"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            Costo = 700m,
+                            Descripcion = "El plan más completo. Un mes con gimnasio y clases de Boxeo o Zumba.",
+                            DuracionDias = 30,
+                            Nombre = "Mensual + Módulo"
+                        });
                 });
 
             modelBuilder.Entity("GymMasterAPI.Models.Miembro", b =>
@@ -128,11 +196,37 @@ namespace GymMasterAPI.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Rol")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("MembresiaId");
 
                     b.ToTable("Miembros");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Email = "admin@gym.com",
+                            EstaActivo = true,
+                            FechaInscripcion = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Nombre = "Administrador",
+                            Password = "admin123",
+                            Rol = "Admin"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Email = "recepcion@gym.com",
+                            EstaActivo = true,
+                            FechaInscripcion = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Nombre = "Recepción Principal",
+                            Password = "recepcion123",
+                            Rol = "Recepcionista"
+                        });
                 });
 
             modelBuilder.Entity("GymMasterAPI.Models.Asistencia", b =>

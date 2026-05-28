@@ -1,45 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Membresias.css';
-
-const planesFallback = [
-  {
-    id: 1, nombre: 'Plan Diario', costo: 50, duracionDias: 1,
-    descripcion: 'Acceso completo al gimnasio por un día. Ideal para visitantes o prueba.',
-    conModulo: false,
-    incluye: ['Acceso a equipos', 'Vestidores', 'Casillero'],
-  },
-  {
-    id: 2, nombre: 'Plan Semanal', costo: 200, duracionDias: 7,
-    descripcion: 'Una semana completa de entrenamiento sin restricciones.',
-    conModulo: false,
-    incluye: ['Acceso a equipos', 'Vestidores', 'Casillero', 'Evaluación física'],
-  },
-  {
-    id: 3, nombre: 'Plan Mensual', costo: 600, duracionDias: 30,
-    descripcion: 'Un mes entero con acceso completo. La mejor opción para resultados reales.',
-    conModulo: false,
-    incluye: ['Acceso a equipos', 'Vestidores', 'Casillero', 'Evaluación física', 'Rutina personalizada'],
-  },
-  {
-    id: 4, nombre: 'Diario + Módulo', costo: 150, duracionDias: 1,
-    descripcion: 'Acceso diario al gimnasio más un módulo de Boxeo o Zumba a tu elección.',
-    conModulo: true,
-    incluye: ['Todo del Plan Diario', 'Módulo Boxeo o Zumba', 'Instructor incluido'],
-  },
-  {
-    id: 5, nombre: 'Semanal + Módulo', costo: 300, duracionDias: 7,
-    descripcion: 'Una semana con acceso al gimnasio y clases de Boxeo o Zumba incluidas.',
-    conModulo: true,
-    incluye: ['Todo del Plan Semanal', 'Módulo Boxeo o Zumba', 'Instructor incluido'],
-  },
-  {
-    id: 6, nombre: 'Mensual + Módulo', costo: 700, duracionDias: 30,
-    descripcion: 'El plan más completo. Un mes con gimnasio y clases de Boxeo o Zumba.',
-    conModulo: true,
-    incluye: ['Todo del Plan Mensual', 'Módulo Boxeo o Zumba', 'Instructor incluido', 'Seguimiento semanal'],
-  },
-];
+import './GestionRecepcion.css';
 
 function mapearPlan(p) {
   const conModulo =
@@ -51,125 +13,295 @@ function mapearPlan(p) {
     duracion: `${p.duracionDias} día${p.duracionDias > 1 ? 's' : ''}`,
     conModulo,
     badge: conModulo ? '+ Módulo' : 'Plan',
-    incluye: p.incluye ?? ['Acceso a equipos', 'Vestidores', 'Casillero'],
   };
 }
 
 function Membresias() {
   const navigate = useNavigate();
   const [planes, setPlanes] = useState([]);
+  const [errorCarga, setErrorCarga] = useState('');
+  
+  const socioNombre = localStorage.getItem('socioNombre');
+  const userRol = localStorage.getItem('socioRol');
+
   const [planSeleccionado, setPlanSeleccionado] = useState(null);
   const [exitoMensaje, setExitoMensaje] = useState('');
-  const socioNombre = localStorage.getItem('socioNombre');
 
-  useEffect(() => {
+  const [modalAdminAbierto, setModalAdminAbierto] = useState(false);
+  const [editandoId, setEditandoId] = useState(null);
+  const [nombre, setNombre] = useState('');
+  const [costo, setCosto] = useState('');
+  const [duracionDias, setDuracionDias] = useState('');
+  const [descripcion, setDescripcion] = useState('');
+  const [mensajeAdmin, setMensajeAdmin] = useState('');
+
+  const cargarPlanes = () => {
     fetch('http://localhost:5027/api/Membresias')
       .then(res => res.json())
       .then(data => setPlanes(data.map(mapearPlan)))
-      .catch(() => {
-        console.warn('desde mac, usando planes de respaldo');
-        setPlanes(planesFallback.map(mapearPlan));
-      });
+      .catch(() => setErrorCarga('No se pudo conectar con el servidor. Verifica que la API esté corriendo.'));
+  };
+
+  useEffect(() => {
+    cargarPlanes();
   }, []);
 
-  const abrirModal = (plan) => {
-    setExitoMensaje('');
-    setPlanSeleccionado(plan);
+  const handleVolver = () => {
+    if (userRol === 'Admin' || userRol === 'Recepcionista') {
+      navigate('/gestion-recepcion');
+    } else {
+      navigate('/inicio-miembro');
+    }
+  };
+  
+  const abrirCrearAdmin = () => {
+    setEditandoId(null);
+    setNombre('');
+    setCosto('');
+    setDuracionDias('');
+    setDescripcion('');
+    setMensajeAdmin('');
+    setModalAdminAbierto(true);
   };
 
-  const cerrarModal = () => {
-    setPlanSeleccionado(null);
-    setExitoMensaje('');
+  const abrirEditarAdmin = (plan) => {
+    setEditandoId(plan.id);
+    setNombre(plan.nombre);
+    setCosto(plan.costo);
+    setDuracionDias(plan.duracionDias);
+    setDescripcion(plan.descripcion);
+    setMensajeAdmin('');
+    setModalAdminAbierto(true);
   };
 
-  const confirmarPago = () => {
-    setExitoMensaje(
-      `¡Listo, ${socioNombre}! Tu ${planSeleccionado.nombre} fue activado.`
-    );
+  const guardarMembresia = async (e) => {
+    e.preventDefault();
+    setMensajeAdmin('');
+
+    const payload = {
+      nombre,
+      costo: parseFloat(costo),
+      duracionDias: parseInt(duracionDias),
+      descripcion
+    };
+
+    try {
+      const url = editandoId 
+        ? `http://localhost:5027/api/Membresias/${editandoId}`
+        : 'http://localhost:5027/api/Membresias';
+      const method = editandoId ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        setMensajeAdmin(editandoId ? '¡Membresía actualizada con éxito!' : '¡Membresía creada con éxito!');
+        setTimeout(() => {
+          setModalAdminAbierto(false);
+          cargarPlanes();
+        }, 1500);
+      } else {
+        const errMsg = await response.text();
+        setMensajeAdmin(`Error en servidor: ${errMsg}`);
+      }
+    } catch (err) {
+      setMensajeAdmin('No se pudo conectar con el servidor.');
+    }
+  };
+
+  const eliminarMembresia = async (id) => {
+    if (!window.confirm('¿Estás seguro de que deseas eliminar permanentemente este plan de membresía?')) return;
+
+    try {
+      const response = await fetch(`http://localhost:5027/api/Membresias/${id}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        cargarPlanes();
+      } else {
+        alert('Ocurrió un error al intentar eliminar la membresía.');
+      }
+    } catch (err) {
+      alert('No se pudo conectar con el servidor.');
+    }
+  };
+
+  const confirmarPagoCliente = () => {
+    setExitoMensaje(`¡Listo, ${socioNombre}! Tu ${planSeleccionado.nombre} fue activado.`);
     setTimeout(() => {
-      cerrarModal();
+      setPlanSeleccionado(null);
+      setExitoMensaje('');
       navigate('/inicio-miembro');
     }, 3000);
   };
 
+  const abrirModalCliente = (plan) => { setExitoMensaje(''); setPlanSeleccionado(plan); };
+  const cerrarModalCliente = () => { setPlanSeleccionado(null); setExitoMensaje(''); };
+
+  if (userRol === 'Admin') {
+    return (
+      <div className="membresias-page">
+        
+        {}
+        <nav className="navbar-admin">
+          <div className="logo-gym">GYM <span>MASTER</span></div>
+          <div className="nav-actions">
+            <div className="tabs-admin">
+              <button className="" onClick={() => { localStorage.setItem('admin_tab_activa', 'socios'); navigate('/gestion-recepcion'); }}>Socios</button>
+              <button className="" onClick={() => { localStorage.setItem('admin_tab_activa', 'modulos'); navigate('/gestion-recepcion'); }}>Clases</button>
+              <button className="active" onClick={() => navigate('/membresias')}>Membresías</button>
+              <button className="" onClick={() => navigate('/gestion-instructores')}>Staff</button>
+            </div>
+            <button className="btn-logout" onClick={() => {
+              localStorage.removeItem('socioId');
+              localStorage.removeItem('socioNombre');
+              localStorage.removeItem('socioRol');
+              localStorage.removeItem('admin_tab_activa'); // Limpiamos pestaña
+              navigate('/login');
+            }}>Salir</button>
+          </div>
+        </nav>
+
+        {errorCarga && <div style={{ background: '#dc3545', color: 'white', padding: '12px 20px', textAlign: 'center', fontWeight: 'bold' }}>{errorCarga}</div>}
+
+        <div className="membresias-content">
+          <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', flexWrap: 'wrap', gap: '20px' }}>
+            <div>
+              <h1 style={{ margin: 0, fontSize: '2.5rem', color: '#aa3bff' }}>Administración de Membresías</h1>
+              <p style={{ color: '#aaa', margin: '5px 0 0' }}>Catálogo operativo en tiempo real conectado a SQL Server.</p>
+            </div>
+            <button onClick={abrirCrearAdmin} style={{ padding: '12px 24px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem' }}>
+              Crear Nuevo Plan
+            </button>
+          </header>
+
+          <section style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', background: 'rgba(255, 255, 255, 0.05)', borderRadius: '15px', overflow: 'hidden' }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid #333', textAlign: 'left' }}>
+                  <th style={{ padding: '15px' }}>ID</th>
+                  <th style={{ padding: '15px' }}>Nombre del Plan</th>
+                  <th style={{ padding: '15px' }}>Costo</th>
+                  <th style={{ padding: '15px' }}>Duración</th>
+                  <th style={{ padding: '15px' }}>Descripción</th>
+                  <th style={{ padding: '15px' }}>Acciones Administrativas</th>
+                </tr>
+              </thead>
+              <tbody>
+                {planes.map(p => (
+                  <tr key={p.id} style={{ borderBottom: '1px solid #333' }}>
+                    <td style={{ padding: '15px' }}>{p.id}</td>
+                    <td style={{ padding: '15px', fontWeight: 'bold', color: '#aa3bff' }}>{p.nombre}</td>
+                    <td style={{ padding: '15px' }}>${p.costo}</td>
+                    <td style={{ padding: '15px' }}>{p.duracion}</td>
+                    <td style={{ padding: '15px', fontSize: '0.85rem', color: '#ccc', maxWidth: '300px' }}>{p.descripcion}</td>
+                    <td style={{ padding: '15px' }}>
+                      <button onClick={() => abrirEditarAdmin(p)} style={{ padding: '8px 15px', marginRight: '10px', borderRadius: '5px', border: 'none', backgroundColor: '#ffc107', color: 'black', fontWeight: 'bold', cursor: 'pointer' }}>Editar</button>
+                      <button onClick={() => eliminarMembresia(p.id)} style={{ padding: '8px 15px', borderRadius: '5px', border: 'none', backgroundColor: '#dc3545', color: 'white', fontWeight: 'bold', cursor: 'pointer' }}>Eliminar</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+        </div>
+
+        {modalAdminAbierto && (
+          <div className="modal-overlay">
+            <div className="modal-card" style={{ maxWidth: '450px', textAlign: 'left' }}>
+              <h2 style={{ color: '#aa3bff', marginTop: 0 }}>{editandoId ? 'Modificar Membresía' : 'Dar de Alta Membresía'}</h2>
+              
+              {mensajeAdmin && (
+                <p style={{ fontWeight: 'bold', color: mensajeAdmin.includes('con éxito') ? '#28a745' : '#dc3545', textAlign: 'center' }}>
+                  {mensajeAdmin}
+                </p>
+              )}
+
+              <form onSubmit={guardarMembresia} style={{ display: 'flex', flexDirection: 'column', gap: '15px', color: 'white' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.9rem' }}>Nombre de la membresía:</label>
+                  <input type="text" value={nombre} onChange={e => setNombre(e.target.value)} required style={{ width: '95%', padding: '10px', borderRadius: '6px', border: '1px solid #555', backgroundColor: '#1a1a1a', color: 'white' }} />
+                </div>
+
+                <div style={{ display: 'flex', gap: '15px' }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.9rem' }}>Costo ($):</label>
+                    <input type="number" step="0.01" value={costo} onChange={e => setCosto(e.target.value)} required style={{ width: '90%', padding: '10px', borderRadius: '6px', border: '1px solid #555', backgroundColor: '#1a1a1a', color: 'white' }} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.9rem' }}>Duración (Días):</label>
+                    <input type="number" value={duracionDias} onChange={e => setDuracionDias(e.target.value)} required style={{ width: '90%', padding: '10px', borderRadius: '6px', border: '1px solid #555', backgroundColor: '#1a1a1a', color: 'white' }} />
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.9rem' }}>Descripción del servicio:</label>
+                  <textarea value={descripcion} onChange={e => setDescripcion(e.target.value)} rows="3" required style={{ width: '95%', padding: '10px', borderRadius: '6px', border: '1px solid #555', backgroundColor: '#1a1a1a', color: 'white', resize: 'none', fontFamily: 'sans-serif' }} />
+                </div>
+
+                <div style={{ display: 'flex', gap: '15px', marginTop: '10px' }}>
+                  <button type="submit" style={{ flex: 1, padding: '12px', backgroundColor: '#aa3bff', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>
+                    {editandoId ? 'Guardar Cambios' : 'Publicar Plan'}
+                  </button>
+                  <button type="button" onClick={() => setModalAdminAbierto(false)} style={{ flex: 1, padding: '12px', backgroundColor: 'transparent', color: '#aaa', border: '1px solid #555', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="membresias-page">
       <nav className="membresias-navbar">
-        <div className="membresias-logo">
-          GYM <span>MASTER</span>
-        </div>
-        <button className="btn-volver" onClick={() => navigate('/inicio-miembro')}>
-          ← Volver
-        </button>
+        <div className="membresias-logo">GYM <span>MASTER</span></div>
+        <button className="btn-volver" onClick={handleVolver}>← Volver</button>
       </nav>
+
+      {errorCarga && <div style={{ background: '#dc3545', color: 'white', padding: '12px 20px', textAlign: 'center', fontWeight: 'bold' }}>{errorCarga}</div>}
 
       <div className="membresias-content">
         <h1 className="membresias-titulo">Nuestros Planes</h1>
-        <p className="membresias-subtitulo">
-          Elige el plan que más se adapte a ti. Los planes con módulo incluyen Boxeo o Zumba.
-        </p>
+        <p className="membresias-subtitulo">Elige el plan que más se adapte a ti. Los planes con módulo incluyen Boxeo o Zumba.</p>
+
+        {planes.length === 0 && !errorCarga && <p style={{ textAlign: 'center', color: '#aaa' }}>Cargando planes...</p>}
 
         <div className="membresias-grid">
           {planes.map((plan) => (
-            <div
-              key={plan.id}
-              className={`plan-card ${plan.conModulo ? 'con-modulo' : ''}`}
-            >
-              <span
-                className="plan-badge"
-                style={{
-                  background: plan.conModulo ? 'rgba(170,59,255,0.3)' : 'rgba(255,255,255,0.1)',
-                  color: plan.conModulo ? '#aa3bff' : '#aaa',
-                }}
-              >
+            <div key={plan.id} className={`plan-card ${plan.conModulo ? 'con-modulo' : ''}`}>
+              <span className="plan-badge" style={{ background: plan.conModulo ? 'rgba(170,59,255,0.3)' : 'rgba(255,255,255,0.1)', color: plan.conModulo ? '#aa3bff' : '#aaa' }}>
                 {plan.badge}
               </span>
-
               <p className="plan-nombre">{plan.nombre}</p>
-
-              <p className="plan-precio">
-                ${plan.precio} <span>/ {plan.duracion}</span>
-              </p>
-
+              <p className="plan-precio">${plan.precio} <span>/ {plan.duracion}</span></p>
               <p className="plan-descripcion">{plan.descripcion}</p>
-
-              <ul className="plan-incluye">
-                {plan.incluye.map((item, i) => (
-                  <li key={i}>{item}</li>
-                ))}
-              </ul>
-
-              <button className="btn-contratar" onClick={() => abrirModal(plan)}>
-                Contratar Plan
-              </button>
+              <button className="btn-contratar" onClick={() => abrirModalCliente(plan)}>Contratar Plan</button>
             </div>
           ))}
         </div>
       </div>
 
       {planSeleccionado && (
-        <div className="modal-overlay" onClick={cerrarModal}>
+        <div className="modal-overlay" onClick={cerrarModalCliente}>
           <div className="modal-card" onClick={(e) => e.stopPropagation()}>
             <h2>Confirmar Plan</h2>
-            <p>
-              Estás a punto de contratar el{' '}
-              <strong>{planSeleccionado.nombre}</strong> con duración de{' '}
-              <strong>{planSeleccionado.duracion}</strong>.
-            </p>
+            <p>Estás a punto de contratar el <strong>{planSeleccionado.nombre}</strong> con duración de <strong>{planSeleccionado.duracion}</strong>.</p>
             <div className="modal-precio">${planSeleccionado.precio}</div>
-            <p style={{ color: '#888', fontSize: '0.85rem' }}>
-              * El pago se realiza en recepción al presentarte.
-            </p>
+            <p style={{ color: '#888', fontSize: '0.85rem' }}>* El pago se realiza en recepción al presentarte.</p>
             {exitoMensaje ? (
               <p className="exito-mensaje">{exitoMensaje}</p>
             ) : (
               <div className="modal-botones">
-                <button className="btn-confirmar-pago" onClick={confirmarPago}>
-                  Confirmar
-                </button>
-                <button className="btn-cancelar-pago" onClick={cerrarModal}>
-                  Cancelar
-                </button>
+                <button className="btn-confirmar-pago" onClick={confirmarPagoCliente}>Confirmar</button>
+                <button className="btn-cancelar-pago" onClick={cerrarModalCliente}>Cancelar</button>
               </div>
             )}
           </div>
