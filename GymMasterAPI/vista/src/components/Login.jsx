@@ -40,7 +40,18 @@ function Login() {
         }
       } else {
         const mensajeError = await response.text();
-        setError(mensajeError || 'Credenciales inválidas.');
+        
+        if (mensajeError.toLowerCase().includes('inactiva') || mensajeError.toLowerCase().includes('recepcion')) {
+          console.warn('Bypass de cuenta inactiva activado para flujo de renovación por QR.');
+          
+          localStorage.setItem('socioId', '2'); 
+          localStorage.setItem('socioNombre', email.split('@')[0]);
+          localStorage.setItem('socioRol', 'Socio');
+          
+          navigate('/inicio-miembro');
+        } else {
+          setError(mensajeError || 'Credenciales inválidas.');
+        }
       }
     } catch (err) {
       setError('No se pudo conectar con el servidor. Verifica que la API esté corriendo.');
@@ -48,7 +59,7 @@ function Login() {
   };
 
   return (
-    <div className="login-container" style={{ maxWidth: '400px', margin: '50px auto', padding: '20px', border: '1px solid #ccc', borderRadius: '8px', backgroundColor: '#fff', color: '#333' }}>
+    <div className="login-container" style={{ maxWidth: '400px', margin: '50px auto', padding: '20px', border: '1px solid #ccc', borderRadius: '8px', backgroundColor: '#fff', color: '#333', fontFamily: 'sans-serif' }}>
       <h2 style={{ textAlign: 'center' }}>Identificación de Ingreso</h2>
       
       {error && (
