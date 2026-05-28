@@ -37,6 +37,7 @@ function GestionInstructores() {
     localStorage.removeItem('socioId');
     localStorage.removeItem('socioNombre');
     localStorage.removeItem('socioRol');
+    localStorage.removeItem('admin_tab_activa'); // Limpiamos pestaña
     navigate('/login');
   };
 
@@ -67,27 +68,16 @@ function GestionInstructores() {
   return (
     <div className="recepcion-container">
       {}
-      {}
-      {}
-      <nav className="navbar-miembro">
+      <nav className="navbar-admin">
         <div className="logo-gym">GYM <span>MASTER</span></div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
-          
-          <div style={{ display: 'flex', gap: '8px', marginRight: '15px', paddingRight: '15px', borderRight: '1px solid #444' }}>
-            <button onClick={() => { localStorage.setItem('admin_tab_activa', 'socios'); navigate('/gestion-recepcion'); }} style={{ background: 'none', color: '#aa3bff', border: '1px solid #aa3bff', padding: '6px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>
-              Gestión Socios
-            </button>
-            <button onClick={() => { localStorage.setItem('admin_tab_activa', 'modulos'); navigate('/gestion-recepcion'); }} style={{ background: 'none', color: '#aa3bff', border: '1px solid #aa3bff', padding: '6px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>
-              Control Clases
-            </button>
+        <div className="nav-actions">
+          <div className="tabs-admin">
+            <button className="" onClick={() => { localStorage.setItem('admin_tab_activa', 'socios'); navigate('/gestion-recepcion'); }}>Socios</button>
+            <button className="" onClick={() => { localStorage.setItem('admin_tab_activa', 'modulos'); navigate('/gestion-recepcion'); }}>Clases</button>
+            <button className="" onClick={() => navigate('/membresias')}>Membresías</button>
+            <button className="active" onClick={() => navigate('/gestion-instructores')}>Staff</button>
           </div>
-
-          <button onClick={() => navigate('/membresias')} style={{ background: 'none', border: '1px solid #aa3bff', color: '#aa3bff', padding: '6px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Membresías</button>
-          
-          {}
-          <button style={{ background: '#aa3bff', border: '1px solid #aa3bff', color: 'white', padding: '6px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Instructores</button>
-          
-          <button onClick={handleLogout} style={{ background: 'none', border: '1px solid #ff4d4d', color: '#ff4d4d', padding: '6px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Salir</button>
+          <button className="btn-logout" onClick={handleLogout}>Salir</button>
         </div>
       </nav>
 

@@ -68,7 +68,7 @@ function GestionRecepcion() {
   }, [modulos]);
 
   const miembrosFiltrados = miembros.filter(m => m.nombre.toLowerCase().includes(busqueda.toLowerCase()));
-  const instructoresFiltrados = instructores.filter(i => i.nombreCompleto?.toLowerCase().includes(busqueda.toLowerCase()));
+  const modulosFiltrados = modulos.filter(m => m.nombre.toLowerCase().includes(busqueda.toLowerCase()));
 
   const abrirSocio = (socio = null) => {
     if (socio) {
@@ -133,20 +133,30 @@ function GestionRecepcion() {
   };
 
   const eliminarModulo = (id) => {
-    if (window.confirm('¿Borrar disciplina?')) setModulos(modulos.filter(m => m.id !== id));
+    if (window.confirm('¿Borrar disciplina?')) {
+      setModulos(modulos.filter(m => String(m.id) !== String(id)));
+    }
   };
 
-  const handleLogout = () => { localStorage.clear(); navigate('/login'); };
+  const handleLogout = () => {
+    localStorage.removeItem('socioId');
+    localStorage.removeItem('socioNombre');
+    localStorage.removeItem('socioRol');
+    localStorage.removeItem('admin_tab_activa');
+    navigate('/login');
+  };
 
   return (
     <div className="recepcion-container">
+      {}
       <nav className="navbar-admin">
         <div className="logo-gym">GYM <span>MASTER</span></div>
         <div className="nav-actions">
           <div className="tabs-admin">
             <button className={vistaActiva === 'socios' ? 'active' : ''} onClick={() => cambiarVista('socios')}>Socios</button>
             <button className={vistaActiva === 'modulos' ? 'active' : ''} onClick={() => cambiarVista('modulos')}>Clases</button>
-            <button className={vistaActiva === 'instructores' ? 'active' : ''} onClick={() => cambiarVista('instructores')}>Staff</button>
+            <button className="" onClick={() => navigate('/membresias')}>Membresías</button>
+            <button className="" onClick={() => navigate('/gestion-instructores')}>Staff</button>
           </div>
           <button className="btn-logout" onClick={handleLogout}>Salir</button>
         </div>
@@ -167,7 +177,6 @@ function GestionRecepcion() {
 
         {errorCarga && <div className="error-msg">{errorCarga}</div>}
 
-        {}
         {vistaActiva === 'socios' && (
           <div className="table-wrapper">
             <table>
@@ -191,13 +200,12 @@ function GestionRecepcion() {
           </div>
         )}
 
-        {}
         {vistaActiva === 'modulos' && (
           <div className="table-wrapper">
              <table>
                 <thead><tr><th>Clase</th><th>Instructor Asignado</th><th>Visibilidad</th><th>Acciones</th></tr></thead>
                 <tbody>
-                  {modulos.map(mod => {
+                  {modulosFiltrados.map(mod => {
                     const inst = instructores.find(i => i.id === parseInt(mod.instructorId));
                     return (
                       <tr key={mod.id}>
@@ -216,22 +224,8 @@ function GestionRecepcion() {
           </div>
         )}
 
-        {}
-        {vistaActiva === 'instructores' && (
-          <div className="staff-grid">
-            {instructoresFiltrados.map(i => (
-              <div key={i.id} className="staff-card">
-                <div className="staff-circle">{i.nombreCompleto?.charAt(0)}</div>
-                <h3>{i.nombreCompleto}</h3>
-                <p>{i.especialidad}</p>
-                <div className="staff-tag">{i.turno}</div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
-      {}
       {modalSocioAbierto && (
         <div className="modal-overlay">
           <div className="modal-box">
@@ -240,6 +234,8 @@ function GestionRecepcion() {
             <form onSubmit={guardarSocio}>
               <input type="text" placeholder="Nombre" value={nombreSocio} onChange={e => setNombreSocio(e.target.value)} required />
               <input type="email" placeholder="Email" value={emailSocio} onChange={e => setEmailSocio(e.target.value)} required />
+              <input type="password" placeholder="Contraseña (Requerida en alta)" value={passwordSocio} onChange={e => setPasswordSocio(e.target.value)} required={!editandoSocioId} />
+              
               <select value={membresiaId} onChange={e => setMembresiaId(e.target.value)}>
                 <option value="">Seleccionar Plan...</option>
                 {membresias.map(mb => <option key={mb.id} value={mb.id}>{mb.nombre}</option>)}
@@ -253,7 +249,6 @@ function GestionRecepcion() {
         </div>
       )}
 
-      {}
       {modalModuloAbierto && (
         <div className="modal-overlay">
           <div className="modal-box">

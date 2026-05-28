@@ -2,11 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './InicioMiembro.css';
 
-// Diccionario estético para asignar colores y siglas a las tarjetas base o a las nuevas
 const configuracionVisual = {
   boxeo: { badge: 'BX' },
   zumba: { badge: 'ZB' },
-  default: { badge: 'MD' } // Sigla por si el Admin inventa una disciplina nueva (ej. Crossfit)
+  default: { badge: 'MD' }
 };
 
 function InicioMiembro() {
@@ -15,16 +14,12 @@ function InicioMiembro() {
   const [mensaje, setMensaje] = useState('');
   const [tipoMensaje, setTipoMensaje] = useState('');
   
-  // 🌟 CORRECCIÓN: Inicializamos leyendo si ya confirmó entrada previamente en esta sesión
   const [asistenciaRegistrada, setAsistenciaRegistrada] = useState(() => {
     return localStorage.getItem('asistenciaRegistrada') === 'true';
   });
 
   const navigate = useNavigate();
 
-  // =========================================================================
-  // LECTURA DINÁMICA DE MÓDULOS DESDE EL PANEL DE ADMIN
-  // =========================================================================
   const [modulosActivos, setModulosActivos] = useState([]);
 
   useEffect(() => {
@@ -37,14 +32,16 @@ function InicioMiembro() {
       setNombreSocio(nombre || 'Socio');
     }
 
-    // Leemos la configuración que dejó el Admin en la memoria
     const configGuardada = localStorage.getItem('gym_modulos_config');
     const todosLosModulos = configGuardada ? JSON.parse(configGuardada) : [
       { id: 1, nombre: 'Boxeo', descripcion: 'Aprende defensa personal', activo: true, instructorId: '' },
       { id: 2, nombre: 'Zumba', descripcion: 'Mejora tu resistencia', activo: true, instructorId: '' }
     ];
 
-    // 🔥 FILTRAMOS: Solo le mostramos al cliente los módulos que el Admin dejó como ACTIVOS
+    if (!configGuardada) {
+      localStorage.setItem('gym_modulos_config', JSON.stringify(todosLosModulos));
+    }
+
     const visibles = todosLosModulos.filter(m => m.activo === true);
     setModulosActivos(visibles);
   }, [navigate]);
@@ -62,7 +59,6 @@ function InicioMiembro() {
         setTipoMensaje('exito');
         setMensaje(data.mensaje);
         
-        // 🌟 CORRECCIÓN: Guardamos el estado de éxito en el almacenamiento local antes de cambiar la vista
         setTimeout(() => {
           localStorage.setItem('asistenciaRegistrada', 'true');
           setAsistenciaRegistrada(true);
@@ -76,7 +72,6 @@ function InicioMiembro() {
       setTipoMensaje('exito');
       setMensaje('¡Asistencia registrada con éxito! Bienvenido al gimnasio.');
       
-      // 🌟 CORRECCIÓN: También en modo simulación guardamos el estado
       setTimeout(() => {
         localStorage.setItem('asistenciaRegistrada', 'true');
         setAsistenciaRegistrada(true);
@@ -85,15 +80,13 @@ function InicioMiembro() {
   };
 
   const handleLogout = () => {
-    // 🌟 Borrado selectivo para no destruir la configuración de las clases/módulos del Admin
     localStorage.removeItem('socioId');
     localStorage.removeItem('socioNombre');
     localStorage.removeItem('socioRol');
-    localStorage.removeItem('asistenciaRegistrada'); // Borramos asistencia de este usuario
+    localStorage.removeItem('asistenciaRegistrada');
     navigate('/login');
   };
 
-  // PANTALLA DE CONTROL DE ACCESOS
   if (!asistenciaRegistrada) {
     return (
       <div style={{
@@ -155,7 +148,6 @@ function InicioMiembro() {
     );
   }
 
-  // PANEL PRINCIPAL DEL SOCIO
   return (
     <div className="inicio-miembro-page">
       <nav className="navbar-miembro">
@@ -177,12 +169,11 @@ function InicioMiembro() {
           ) : (
             <div className="modules-grid">
               
-              {/* 🔥 Mapeo Dinámico inyectado en tus clases originales 🔥 */}
+              {}
               {modulosActivos.map(mod => {
                 const clave = mod.nombre.toLowerCase();
                 const diseño = configuracionVisual[clave] || configuracionVisual.default;
                 
-                // El slug determina a qué ruta se dirige al hacer clic
                 const slugRuta = clave.includes('boxeo') || clave.includes('box') ? 'boxeo' : 
                                  clave.includes('zumba') ? 'zumba' : clave.replace(/\s+/g, '-');
 
@@ -190,7 +181,7 @@ function InicioMiembro() {
                   <div key={mod.id} className="mod-card">
                     <div className="mod-badge">{diseño.badge}</div>
                     <h3>{mod.nombre}</h3>
-                    {/* Hacemos un pequeño recorte visual para no romper tu diseño si el admin escribe mucho */}
+                    {}
                     <p>{mod.descripcion.length > 30 ? mod.descripcion.substring(0, 27) + '...' : mod.descripcion}</p>
                     <button className="btn-enter" onClick={() => navigate(`/modulo/${slugRuta}`)}>
                       Entrar
