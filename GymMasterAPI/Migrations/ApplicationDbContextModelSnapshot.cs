@@ -43,6 +43,118 @@ namespace GymMasterAPI.Migrations
                     b.ToTable("Asistencias");
                 });
 
+            modelBuilder.Entity("GymMasterAPI.Models.HorarioModulo", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("DiaSemana")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("nvarchar(15)");
+
+                    b.Property<string>("HoraFin")
+                        .IsRequired()
+                        .HasMaxLength(5)
+                        .HasColumnType("nvarchar(5)");
+
+                    b.Property<string>("HoraInicio")
+                        .IsRequired()
+                        .HasMaxLength(5)
+                        .HasColumnType("nvarchar(5)");
+
+                    b.Property<int>("ModuloId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Nivel")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ModuloId");
+
+                    b.ToTable("HorariosModulo");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            DiaSemana = "Lunes",
+                            HoraFin = "08:30",
+                            HoraInicio = "07:00",
+                            ModuloId = 1,
+                            Nivel = "Principiante"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            DiaSemana = "Miércoles",
+                            HoraFin = "08:30",
+                            HoraInicio = "07:00",
+                            ModuloId = 1,
+                            Nivel = "Principiante"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            DiaSemana = "Viernes",
+                            HoraFin = "09:30",
+                            HoraInicio = "08:00",
+                            ModuloId = 1,
+                            Nivel = "Avanzado"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            DiaSemana = "Sábado",
+                            HoraFin = "11:00",
+                            HoraInicio = "09:00",
+                            ModuloId = 1,
+                            Nivel = "Todos los niveles"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            DiaSemana = "Martes",
+                            HoraFin = "08:00",
+                            HoraInicio = "07:00",
+                            ModuloId = 2,
+                            Nivel = "Todos los niveles"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            DiaSemana = "Jueves",
+                            HoraFin = "18:00",
+                            HoraInicio = "17:00",
+                            ModuloId = 2,
+                            Nivel = "Principiante"
+                        },
+                        new
+                        {
+                            Id = 7,
+                            DiaSemana = "Miércoles",
+                            HoraFin = "20:00",
+                            HoraInicio = "19:00",
+                            ModuloId = 2,
+                            Nivel = "Intermedio"
+                        },
+                        new
+                        {
+                            Id = 8,
+                            DiaSemana = "Sábado",
+                            HoraFin = "11:30",
+                            HoraInicio = "10:00",
+                            ModuloId = 2,
+                            Nivel = "Todos los niveles"
+                        });
+                });
+
             modelBuilder.Entity("GymMasterAPI.Models.Instructor", b =>
                 {
                     b.Property<int>("Id")
@@ -229,6 +341,69 @@ namespace GymMasterAPI.Migrations
                         });
                 });
 
+            modelBuilder.Entity("GymMasterAPI.Models.Modulo", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Activo")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Badge")
+                        .IsRequired()
+                        .HasMaxLength(4)
+                        .HasColumnType("nvarchar(4)");
+
+                    b.Property<string>("Color")
+                        .IsRequired()
+                        .HasMaxLength(9)
+                        .HasColumnType("nvarchar(9)");
+
+                    b.Property<string>("Descripcion")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<int?>("InstructorId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InstructorId");
+
+                    b.ToTable("Modulos");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Activo = true,
+                            Badge = "BX",
+                            Color = "#aa3bff",
+                            Descripcion = "Aprende técnicas de defensa personal, mejora tu condición física y libera el estrés.",
+                            InstructorId = 1,
+                            Nombre = "Boxeo"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Activo = true,
+                            Badge = "ZB",
+                            Color = "#ff3b9a",
+                            Descripcion = "Baila, quema calorías y diviértete con ritmos latinos. Clases para todos los niveles.",
+                            InstructorId = 2,
+                            Nombre = "Zumba"
+                        });
+                });
+
             modelBuilder.Entity("GymMasterAPI.Models.Asistencia", b =>
                 {
                     b.HasOne("GymMasterAPI.Models.Miembro", "Miembro")
@@ -240,6 +415,17 @@ namespace GymMasterAPI.Migrations
                     b.Navigation("Miembro");
                 });
 
+            modelBuilder.Entity("GymMasterAPI.Models.HorarioModulo", b =>
+                {
+                    b.HasOne("GymMasterAPI.Models.Modulo", "Modulo")
+                        .WithMany("Horarios")
+                        .HasForeignKey("ModuloId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Modulo");
+                });
+
             modelBuilder.Entity("GymMasterAPI.Models.Miembro", b =>
                 {
                     b.HasOne("GymMasterAPI.Models.Membresia", "Membresia")
@@ -247,6 +433,20 @@ namespace GymMasterAPI.Migrations
                         .HasForeignKey("MembresiaId");
 
                     b.Navigation("Membresia");
+                });
+
+            modelBuilder.Entity("GymMasterAPI.Models.Modulo", b =>
+                {
+                    b.HasOne("GymMasterAPI.Models.Instructor", "Instructor")
+                        .WithMany()
+                        .HasForeignKey("InstructorId");
+
+                    b.Navigation("Instructor");
+                });
+
+            modelBuilder.Entity("GymMasterAPI.Models.Modulo", b =>
+                {
+                    b.Navigation("Horarios");
                 });
 #pragma warning restore 612, 618
         }

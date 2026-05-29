@@ -2,42 +2,30 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import './ModuloDetalle.css';
 
-const esteticaModulos = {
-  boxeo: {
-    badge: 'BX',
-    color: '#aa3bff',
-    horarios: [
-      { dia: 'Lunes y Miércoles', hora: '7:00 AM - 8:30 AM',  nivel: 'Principiante' },
-      { dia: 'Lunes y Miércoles', hora: '6:00 PM - 7:30 PM',  nivel: 'Intermedio' },
-      { dia: 'Viernes',           hora: '8:00 AM - 9:30 AM',  nivel: 'Avanzado' },
-      { dia: 'Sábado',            hora: '9:00 AM - 11:00 AM', nivel: 'Todos los niveles' },
-    ],
-  },
-  zumba: {
-    badge: 'ZB',
-    color: '#ff3b9a',
-    horarios: [
-      { dia: 'Martes y Jueves', hora: '7:00 AM - 8:00 AM',   nivel: 'Todos los niveles' },
-      { dia: 'Martes y Jueves', hora: '5:00 PM - 6:00 PM',   nivel: 'Principiante' },
-      { dia: 'Miércoles',       hora: '7:00 PM - 8:00 PM',   nivel: 'Intermedio' },
-      { dia: 'Sábado',          hora: '10:00 AM - 11:30 AM', nivel: 'Todos los niveles' },
-    ],
-  },
-  default: {
-    badge: 'MD',
-    color: '#28a745',
-    horarios: [
-      { dia: 'Lunes a Viernes', hora: 'Horarios por definir', nivel: 'Todos los niveles' }
-    ]
-  }
-};
+// Mapea "07:00" → "7:00 AM", "13:30" → "1:30 PM"
+function formatearHora12(hora24) {
+  if (!hora24 || !hora24.includes(':')) return hora24 || '';
+  const [hStr, mStr] = hora24.split(':');
+  const h = parseInt(hStr, 10);
+  const m = mStr.padStart(2, '0');
+  if (isNaN(h)) return hora24;
+  const sufijo = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:${m} ${sufijo}`;
+}
+
+function rangoHorario(inicio, fin) {
+  return `${formatearHora12(inicio)} - ${formatearHora12(fin)}`;
+}
 
 function ModuloDetalle() {
   const { tipo } = useParams();
   const navigate = useNavigate();
-  
-  const [instructor, setInstructor] = useState(null);
-  const [cargandoInstructor, setCargandoInstructor] = useState(true);
+
+  const [modulo, setModulo] = useState(null);
+  const [cargandoModulo, setCargandoModulo] = useState(true);
+  const [errorCarga, setErrorCarga] = useState('');
+
   const [mensaje, setMensaje] = useState('');
   const [tipoMensaje, setTipoMensaje] = useState('');
   const [registrando, setRegistrando] = useState(false);
@@ -45,47 +33,36 @@ function ModuloDetalle() {
   const socioNombre = localStorage.getItem('socioNombre');
   const socioId = localStorage.getItem('socioId');
 
-  const configGuardada = localStorage.getItem('gym_modulos_config');
-  const modulosAdmin = configGuardada ? JSON.parse(configGuardada) : [];
-
-  const moduloDinamico = modulosAdmin.find(m => m.nombre.toLowerCase().includes(tipo.toLowerCase()));
-
-  const estetica = esteticaModulos[tipo.toLowerCase()] || esteticaModulos.default;
-  
-  const modulo = moduloDinamico ? {
-    ...estetica,
-    nombre: moduloDinamico.nombre,
-    descripcion: moduloDinamico.descripcion,
-    activo: moduloDinamico.activo,
-    instructorId: moduloDinamico.instructorId
-  } : null;
-
   useEffect(() => {
-    if (!socioId) navigate('/login');
-    if (!modulo || !modulo.activo) navigate('/inicio-miembro');
-  }, [modulo, socioId, navigate]);
-
-  useEffect(() => {
-    if (!modulo || !modulo.activo) return;
-    setCargandoInstructor(true);
-
-    if (!modulo.instructorId) {
-      setInstructor(null);
-      setCargandoInstructor(false);
+    if (!socioId) {
+      navigate('/login');
       return;
     }
 
-    fetch('http://localhost:5027/api/Instructores')
+    setCargandoModulo(true);
+    fetch('http://localhost:5027/api/Modulos')
       .then(res => res.json())
       .then(data => {
-        const asignado = data.find(i => i.id === parseInt(modulo.instructorId));
-        setInstructor(asignado ?? null);
-      })
-      .catch(() => setInstructor(null))
-      .finally(() => setCargandoInstructor(false));
-  }, [modulo?.instructorId]);
+        const slug = (tipo || '').toLowerCase();
+        const encontrado = data.find(m => m.nombre.toLowerCase() === slug)
+                        || data.find(m => m.nombre.toLowerCase().includes(slug))
+                        || data.find(m => String(m.id) === slug);
 
-  if (!modulo || !modulo.activo) return null;
+        if (!encontrado) {
+          setErrorCarga('La clase que buscas no existe.');
+          setTimeout(() => navigate('/inicio-miembro'), 2000);
+          return;
+        }
+        if (!encontrado.activo) {
+          setErrorCarga('Esta clase no está disponible en este momento.');
+          setTimeout(() => navigate('/inicio-miembro'), 2000);
+          return;
+        }
+        setModulo(encontrado);
+      })
+      .catch(() => setErrorCarga('No se pudo conectar con el servidor. Verifica que la API esté corriendo.'))
+      .finally(() => setCargandoModulo(false));
+  }, [tipo, socioId, navigate]);
 
   const registrarAsistencia = async () => {
     setRegistrando(true);
@@ -99,18 +76,36 @@ function ModuloDetalle() {
       const data = await response.json();
       if (response.ok) {
         setTipoMensaje('exito');
-        setMensaje(`¡Asistencia al ${modulo.nombre} registrada con éxito!`);
+        setMensaje(`¡Asistencia al módulo ${modulo.nombre} registrada con éxito!`);
       } else {
         setTipoMensaje('error');
-        setMensaje(data || 'Error al registrar.');
+        setMensaje(typeof data === 'string' ? data : 'Error al registrar la asistencia.');
       }
     } catch {
-      setTipoMensaje('exito');
-      setMensaje(`¡Asistencia al ${modulo.nombre} registrada! (modo simulado)`);
+      setTipoMensaje('error');
+      setMensaje('No se pudo conectar con el servidor.');
     } finally {
       setRegistrando(false);
     }
   };
+
+  if (cargandoModulo) {
+    return (
+      <div className="modulo-page" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+        <p style={{ color: '#bbb' }}>Cargando información del módulo...</p>
+      </div>
+    );
+  }
+
+  if (errorCarga) {
+    return (
+      <div className="modulo-page" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+        <p style={{ color: '#ff4d4d', fontWeight: 'bold' }}>{errorCarga}</p>
+      </div>
+    );
+  }
+
+  if (!modulo) return null;
 
   return (
     <div className="modulo-page">
@@ -125,36 +120,35 @@ function ModuloDetalle() {
             {modulo.badge}
           </div>
           <div>
-            <h1>{modulo.nombre}</h1>
+            <h1 className="modulo-titulo" style={{ color: modulo.color }}>{modulo.nombre}</h1>
             <p>{modulo.descripcion}</p>
           </div>
         </div>
 
         <div className="modulo-grid">
           <div className="card-modulo">
-            <h2 style={{ color: modulo.color }}> Horarios</h2>
-            {modulo.horarios.map((h, i) => (
-              <div key={i} className="horario-item">
-                <div className="horario-dia">{h.dia}</div>
-                <div className="horario-hora">{h.hora}</div>
-                <span className="horario-nivel" style={{ background: `${modulo.color}33`, color: modulo.color }}>
-                  {h.nivel}
-                </span>
-              </div>
-            ))}
+            <h2 style={{ color: modulo.color }}>Horarios</h2>
+            {modulo.horarios.length === 0 ? (
+              <p style={{ color: '#bbb' }}>Aún no se han asignado horarios para esta clase.</p>
+            ) : (
+              modulo.horarios.map((h) => (
+                <div key={h.id} className="horario-item">
+                  <div className="horario-dia">{h.diaSemana}</div>
+                  <div className="horario-hora">{rangoHorario(h.horaInicio, h.horaFin)}</div>
+                  <span className="horario-nivel" style={{ background: `${modulo.color}33`, color: modulo.color }}>
+                    {h.nivel}
+                  </span>
+                </div>
+              ))
+            )}
           </div>
 
           <div className="card-derecha">
             <div className="card-modulo">
-              <h2 style={{ color: modulo.color }}> Instructor Asignado</h2>
-              {cargandoInstructor ? (
-                <p style={{ color: '#bbb' }}>Cargando datos de la base...</p>
-              ) : instructor ? (
+              <h2 style={{ color: modulo.color }}>Instructor Asignado</h2>
+              {modulo.instructorNombre ? (
                 <>
-                  {}
-                  <div className="instructor-nombre">👤 {instructor.nombre || instructor.nombreCompleto}</div>
-                  <div className="instructor-dato">🥊 Especialidad: {instructor.especialidad}</div>
-                  {instructor.turno && <div className="instructor-dato"> Turno: {instructor.turno}</div>}
+                  <div className="instructor-nombre">👤 {modulo.instructorNombre}</div>
                 </>
               ) : (
                 <p style={{ color: '#ff4d4d', fontWeight: 'bold' }}>
@@ -164,7 +158,7 @@ function ModuloDetalle() {
             </div>
 
             <div className="card-modulo card-registro" style={{ border: `1px solid ${modulo.color}` }}>
-              <h2 style={{ color: modulo.color }}> Registrar Asistencia</h2>
+              <h2 style={{ color: modulo.color }}>Registrar Asistencia</h2>
               <p style={{ color: '#bbb', fontSize: '0.9rem' }}>
                 Hola <strong style={{ color: 'white' }}>{socioNombre}</strong>,
                 confirma tu entrada a la clase de hoy.

@@ -2,18 +2,31 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './InicioMiembro.css';
 
-const configuracionVisual = {
-  boxeo: { badge: 'BX' },
-  zumba: { badge: 'ZB' },
-  default: { badge: 'MD' }
-};
+// Mapea "07:00" → "7:00 AM"
+function formatearHora12(hora24) {
+  if (!hora24 || !hora24.includes(':')) return hora24 || '';
+  const [hStr, mStr] = hora24.split(':');
+  const h = parseInt(hStr, 10);
+  const m = mStr.padStart(2, '0');
+  if (isNaN(h)) return hora24;
+  const sufijo = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:${m} ${sufijo}`;
+}
+
+function resumenHorarios(horarios) {
+  if (!horarios || horarios.length === 0) return 'Horario por asignar';
+  const primero = horarios[0];
+  const dias = [...new Set(horarios.map(h => h.diaSemana))].slice(0, 3).join(', ');
+  return `${dias} · ${formatearHora12(primero.horaInicio)}`;
+}
 
 function InicioMiembro() {
   const [nombreSocio, setNombreSocio] = useState('');
   const [socioId, setSocioId] = useState(null);
   const [mensaje, setMensaje] = useState('');
   const [tipoMensaje, setTipoMensaje] = useState('');
-  
+
   const [asistenciaRegistrada, setAsistenciaRegistrada] = useState(() => {
     return localStorage.getItem('asistenciaRegistrada') === 'true';
   });
@@ -21,29 +34,25 @@ function InicioMiembro() {
   const navigate = useNavigate();
 
   const [modulosActivos, setModulosActivos] = useState([]);
+  const [errorCargaModulos, setErrorCargaModulos] = useState('');
 
   useEffect(() => {
     const id = localStorage.getItem('socioId');
     const nombre = localStorage.getItem('socioNombre');
     if (!id) {
       navigate('/login');
-    } else {
-      setSocioId(parseInt(id));
-      setNombreSocio(nombre || 'Socio');
+      return;
     }
+    setSocioId(parseInt(id));
+    setNombreSocio(nombre || 'Socio');
 
-    const configGuardada = localStorage.getItem('gym_modulos_config');
-    const todosLosModulos = configGuardada ? JSON.parse(configGuardada) : [
-      { id: 1, nombre: 'Boxeo', descripcion: 'Aprende defensa personal', diasHoras: 'Lun-Vie 18:00', activo: true, instructorId: '' },
-      { id: 2, nombre: 'Zumba', descripcion: 'Mejora tu resistencia', diasHoras: 'Mar-Jue 19:00', activo: true, instructorId: '' }
-    ];
-
-    if (!configGuardada) {
-      localStorage.setItem('gym_modulos_config', JSON.stringify(todosLosModulos));
-    }
-
-    const visibles = todosLosModulos.filter(m => m.activo === true);
-    setModulosActivos(visibles);
+    fetch('http://localhost:5027/api/Modulos')
+      .then(res => res.json())
+      .then(data => {
+        const visibles = data.filter(m => m.activo === true);
+        setModulosActivos(visibles);
+      })
+      .catch(() => setErrorCargaModulos('No se pudo cargar la lista de clases. Verifica que la API esté corriendo.'));
   }, [navigate]);
 
   const checkInAsistencia = async () => {
@@ -68,14 +77,8 @@ function InicioMiembro() {
         setMensaje(data || 'Ocurrió un error al registrar la asistencia.');
       }
     } catch (error) {
-      console.warn('Simulacion de asistencia, para trabajar en la mac jaja');
-      setTipoMensaje('exito');
-      setMensaje('¡Asistencia registrada con éxito! Bienvenido al gimnasio.');
-      
-      setTimeout(() => {
-        localStorage.setItem('asistenciaRegistrada', 'true');
-        setAsistenciaRegistrada(true);
-      }, 1500);
+      setTipoMensaje('error');
+      setMensaje('No se pudo conectar con el servidor. Intenta de nuevo.');
     }
   };
 
@@ -153,7 +156,6 @@ function InicioMiembro() {
       <nav className="navbar-miembro">
         <div className="logo-gym">GYM <span>MASTER</span></div>
         <div className="nav-links">
-          <button className="nav-btn">Comunidad</button>
           <button className="nav-btn" onClick={() => navigate('/membresias')}>Membresía</button>
           <button className="nav-btn btn-salir" onClick={handleLogout}>Salir</button>
         </div>
@@ -164,29 +166,26 @@ function InicioMiembro() {
           <h1 className="welcome-text">¡Hola, {nombreSocio}!</h1>
           <p className="welcome-sub">"Maquina voy ¡BliiiilleEEEEeeenNnnN!"</p>
 
-          {modulosActivos.length === 0 ? (
+          {errorCargaModulos && (
+            <p style={{ color: '#ff4d4d', marginTop: '20px', fontWeight: 'bold' }}>{errorCargaModulos}</p>
+          )}
+
+          {!errorCargaModulos && modulosActivos.length === 0 ? (
             <p style={{ color: '#aaa', marginTop: '20px' }}>No hay clases asignadas o activas en este momento por la administración.</p>
           ) : (
             <div className="modules-grid">
-              
               {modulosActivos.map(mod => {
-                const clave = mod.nombre.toLowerCase();
-                const diseño = configuracionVisual[clave] || configuracionVisual.default;
-                
-                const slugRuta = clave.includes('boxeo') || clave.includes('box') ? 'boxeo' : 
-                                 clave.includes('zumba') ? 'zumba' : clave.replace(/\s+/g, '-');
-
+                const slugRuta = mod.nombre.toLowerCase().trim().replace(/\s+/g, '-');
                 return (
                   <div key={mod.id} className="mod-card">
-                    <div className="mod-badge">{diseño.badge}</div>
+                    <div className="mod-badge" style={{ background: mod.color }}>{mod.badge}</div>
                     <h3>{mod.nombre}</h3>
-                    
-                    {}
+
                     <p style={{ margin: '8px 0 4px', fontSize: '0.95rem', color: '#ccc' }}>
                       {mod.descripcion}
                     </p>
-                    <p style={{ fontSize: '0.85rem', color: '#aa3bff', fontWeight: 'bold', marginBottom: '12px' }}>
-                      {mod.diasHoras || 'Horario por asignar'}
+                    <p style={{ fontSize: '0.85rem', color: mod.color, fontWeight: 'bold', marginBottom: '12px' }}>
+                      {resumenHorarios(mod.horarios)}
                     </p>
 
                     <button className="btn-enter" onClick={() => navigate(`/modulo/${slugRuta}`)}>
@@ -195,10 +194,9 @@ function InicioMiembro() {
                   </div>
                 );
               })}
-
             </div>
           )}
-          
+
         </div>
       </main>
     </div>

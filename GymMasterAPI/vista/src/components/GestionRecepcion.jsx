@@ -29,33 +29,35 @@ function GestionRecepcion() {
   const [membresiaId, setMembresiaId] = useState('');
   const [mensajeSocio, setMensajeSocio] = useState('');
 
-  const [modulos, setModulos] = useState(() => {
-    const guardados = localStorage.getItem('gym_modulos_config');
-    return guardados ? JSON.parse(guardados) : [
-      { id: 1, nombre: 'Boxeo', descripcion: 'Técnica y resistencia.', diasHoras: 'Lun-Vie 18:00', activo: true, instructorId: '' },
-      { id: 2, nombre: 'Zumba', descripcion: 'Quema calórica rítmica.', diasHoras: 'Mar-Jue 19:00', activo: true, instructorId: '' }
-    ];
-  });
+  const [modulos, setModulos] = useState([]);
   const [modalModuloAbierto, setModalModuloAbierto] = useState(false);
   const [editandoModuloId, setEditandoModuloId] = useState(null);
   const [modNombre, setModNombre] = useState('');
   const [modDescripcion, setModDescripcion] = useState('');
-  const [modDiasHoras, setModDiasHoras] = useState('');
+  const [modBadge, setModBadge] = useState('MD');
+  const [modColor, setModColor] = useState('#aa3bff');
   const [modActivo, setModActivo] = useState(true);
   const [modInstructorId, setModInstructorId] = useState('');
+  const [modHorarios, setModHorarios] = useState([]); // [{ diaSemana, horaInicio, horaFin, nivel }]
+  const [mensajeModulo, setMensajeModulo] = useState('');
+
+  const DIAS_SEMANA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+  const NIVELES = ['Todos los niveles', 'Principiante', 'Intermedio', 'Avanzado'];
 
   const cargarTodo = () => {
     const apiBase = 'http://localhost:5027/api';
-    
+
     Promise.all([
       fetch(`${apiBase}/Miembros`).then(res => res.json()),
       fetch(`${apiBase}/Membresias`).then(res => res.json()),
-      fetch(`${apiBase}/Instructores`).then(res => res.json())
+      fetch(`${apiBase}/Instructores`).then(res => res.json()),
+      fetch(`${apiBase}/Modulos`).then(res => res.json())
     ])
-    .then(([dataMiembros, dataMembresias, dataInstructores]) => {
+    .then(([dataMiembros, dataMembresias, dataInstructores, dataModulos]) => {
       setMiembros(dataMiembros);
       setMembresias(dataMembresias);
       setInstructores(dataInstructores);
+      setModulos(dataModulos);
     })
     .catch(() => setErrorCarga('Error de conexión con el servidor API.'));
   };
@@ -63,10 +65,6 @@ function GestionRecepcion() {
   useEffect(() => {
     cargarTodo();
   }, []);
-
-  useEffect(() => {
-    localStorage.setItem('gym_modulos_config', JSON.stringify(modulos));
-  }, [modulos]);
 
   const miembrosFiltrados = miembros.filter(m => m.nombre.toLowerCase().includes(busqueda.toLowerCase()));
   const modulosFiltrados = modulos.filter(m => m.nombre.toLowerCase().includes(busqueda.toLowerCase()));
@@ -160,43 +158,113 @@ function GestionRecepcion() {
   };
 
   const abrirModulo = (m = null) => {
-    if (m) { 
-      setEditandoModuloId(m.id); 
-      setModNombre(m.nombre); 
-      setModDescripcion(m.descripcion || ''); 
-      setModDiasHoras(m.diasHoras || ''); 
-      setModActivo(m.activo); 
-      setModInstructorId(m.instructorId); 
-    } else { 
-      setEditandoModuloId(null); 
-      setModNombre(''); 
-      setModDescripcion(''); 
-      setModDiasHoras(''); 
-      setModActivo(true); 
-      setModInstructorId(''); 
+    setMensajeModulo('');
+    if (m) {
+      setEditandoModuloId(m.id);
+      setModNombre(m.nombre);
+      setModDescripcion(m.descripcion || '');
+      setModBadge(m.badge || 'MD');
+      setModColor(m.color || '#aa3bff');
+      setModActivo(m.activo);
+      setModInstructorId(m.instructorId || '');
+      setModHorarios((m.horarios || []).map(h => ({
+        diaSemana: h.diaSemana,
+        horaInicio: h.horaInicio,
+        horaFin: h.horaFin,
+        nivel: h.nivel || 'Todos los niveles'
+      })));
+    } else {
+      setEditandoModuloId(null);
+      setModNombre('');
+      setModDescripcion('');
+      setModBadge('MD');
+      setModColor('#aa3bff');
+      setModActivo(true);
+      setModInstructorId('');
+      setModHorarios([]);
     }
     setModalModuloAbierto(true);
   };
 
-  const guardarModulo = (e) => {
-    e.preventDefault();
-    const info = { 
-      id: editandoModuloId || Date.now(), 
-      nombre: modNombre, 
-      descripcion: modDescripcion, 
-      diasHoras: modDiasHoras, 
-      activo: modActivo, 
-      instructorId: modInstructorId 
-    };
-    if (editandoModuloId) setModulos(modulos.map(m => m.id === editandoModuloId ? info : m));
-    else setModulos([...modulos, info]);
-    setModalModuloAbierto(false);
+  const agregarHorario = () => {
+    setModHorarios([...modHorarios, { diaSemana: 'Lunes', horaInicio: '07:00', horaFin: '08:00', nivel: 'Todos los niveles' }]);
   };
 
-  const eliminarModulo = (id) => {
-    if (window.confirm('¿Borrar disciplina?')) {
-      setModulos(modulos.filter(m => String(m.id) !== String(id)));
+  const actualizarHorario = (idx, campo, valor) => {
+    setModHorarios(modHorarios.map((h, i) => i === idx ? { ...h, [campo]: valor } : h));
+  };
+
+  const eliminarHorario = (idx) => {
+    setModHorarios(modHorarios.filter((_, i) => i !== idx));
+  };
+
+  const guardarModulo = async (e) => {
+    e.preventDefault();
+    setMensajeModulo('');
+
+    // Validación de horarios: hora fin > hora inicio
+    for (const h of modHorarios) {
+      if (h.horaFin <= h.horaInicio) {
+        setMensajeModulo(`La hora de fin debe ser posterior a la de inicio en el horario de ${h.diaSemana}.`);
+        return;
+      }
     }
+
+    const payload = {
+      nombre: modNombre,
+      descripcion: modDescripcion,
+      badge: modBadge,
+      color: modColor,
+      activo: modActivo,
+      instructorId: modInstructorId ? parseInt(modInstructorId) : null,
+      horarios: modHorarios
+    };
+
+    try {
+      const url = editandoModuloId
+        ? `http://localhost:5027/api/Modulos/${editandoModuloId}`
+        : 'http://localhost:5027/api/Modulos';
+      const method = editandoModuloId ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        setMensajeModulo(editandoModuloId ? '¡Clase actualizada con éxito!' : '¡Clase creada con éxito!');
+        setTimeout(() => {
+          setModalModuloAbierto(false);
+          cargarTodo();
+        }, 1200);
+      } else {
+        const errMsg = await res.text();
+        setMensajeModulo(`Error: ${errMsg}`);
+      }
+    } catch {
+      setMensajeModulo('No se pudo conectar con el servidor.');
+    }
+  };
+
+  const eliminarModulo = async (id) => {
+    if (!window.confirm('¿Eliminar esta clase de forma permanente? Sus horarios también se borrarán.')) return;
+    try {
+      const res = await fetch(`http://localhost:5027/api/Modulos/${id}`, { method: 'DELETE' });
+      if (res.ok) cargarTodo();
+      else alert('Ocurrió un error al eliminar la clase.');
+    } catch {
+      alert('No se pudo conectar con el servidor.');
+    }
+  };
+
+  // Resumen corto de los horarios para la tabla del admin.
+  const resumenHorariosAdmin = (horarios) => {
+    if (!horarios || horarios.length === 0) return 'Sin horarios asignados';
+    return horarios
+      .map(h => `${h.diaSemana.substring(0, 3)} ${h.horaInicio}`)
+      .slice(0, 3)
+      .join(' · ') + (horarios.length > 3 ? '…' : '');
   };
 
   const handleLogout = () => {
@@ -264,23 +332,23 @@ function GestionRecepcion() {
         {vistaActiva === 'modulos' && (
           <div className="table-wrapper">
              <table>
-                <thead><tr><th>Clase</th><th>Instructor Asignado</th><th>Visibilidad</th><th>Acciones</th></tr></thead>
+                <thead><tr><th>Clase</th><th>Instructor Asignado</th><th>Horarios</th><th>Visibilidad</th><th>Acciones</th></tr></thead>
                 <tbody>
                   {modulosFiltrados.map(mod => {
-                    const inst = instructores.find(i => i.id === parseInt(mod.instructorId));
-                    
-                    {}
+                    const inst = instructores.find(i => i.id === mod.instructorId);
                     const claseVisible = mod.activo && (!inst || inst.estaActivo !== false);
 
                     return (
                       <tr key={mod.id}>
                         <td>
+                          <span style={{ display: 'inline-block', width: 24, height: 24, borderRadius: 12, background: mod.color, color: 'white', textAlign: 'center', lineHeight: '24px', fontSize: '0.7rem', fontWeight: 'bold', marginRight: 8 }}>{mod.badge}</span>
                           <strong>{mod.nombre}</strong><br/>
                           <span style={{ fontSize: '0.85em', color: '#888' }}>
-                            {mod.diasHoras} | {mod.descripcion}
+                            {mod.descripcion}
                           </span>
                         </td>
-                        <td>{inst ? inst.nombreCompleto : ' Sin asignar'}</td>
+                        <td>{mod.instructorNombre || (inst ? inst.nombreCompleto : 'Sin asignar')}</td>
+                        <td style={{ fontSize: '0.85em', color: '#666' }}>{resumenHorariosAdmin(mod.horarios)}</td>
                         <td><span className={claseVisible ? 'txt-ok' : 'txt-no'}>{claseVisible ? 'Público' : 'Privado'}</span></td>
                         <td>
                           <button className="btn-edit" onClick={() => abrirModulo(mod)}>Config</button>
@@ -289,6 +357,11 @@ function GestionRecepcion() {
                       </tr>
                     );
                   })}
+                  {modulosFiltrados.length === 0 && (
+                    <tr><td colSpan="5" style={{ textAlign: 'center', color: '#aaa', padding: '20px' }}>
+                      No hay clases registradas todavía.
+                    </td></tr>
+                  )}
                 </tbody>
               </table>
           </div>
@@ -375,31 +448,120 @@ function GestionRecepcion() {
 
       {modalModuloAbierto && (
         <div className="modal-overlay">
-          <div className="modal-box">
-            <h3>Configurar Clase</h3>
+          <div className="modal-box" style={{ maxWidth: '600px' }}>
+            <h3>{editandoModuloId ? 'Configurar Clase' : 'Nueva Clase'}</h3>
+            {mensajeModulo && (
+              <p className="modal-msg" style={{ color: mensajeModulo.includes('con éxito') ? '#28a745' : '#dc3545', fontWeight: 'bold' }}>
+                {mensajeModulo}
+              </p>
+            )}
             <form onSubmit={guardarModulo}>
-              <input type="text" placeholder="Nombre de la clase" value={modNombre} onChange={e => setModNombre(e.target.value)} required />
-              
-              <input type="text" placeholder="Días y Horarios (Ej: Lun y Mie 18:00)" value={modDiasHoras} onChange={e => setModDiasHoras(e.target.value)} required />
-              <textarea placeholder="Descripción breve de la clase" value={modDescripcion} onChange={e => setModDescripcion(e.target.value)} rows="2" style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '4px', border: '1px solid #ccc', resize: 'none' }} />
+              <input type="text" placeholder="Nombre de la clase (Ej. Boxeo)" value={modNombre} onChange={e => setModNombre(e.target.value)} required />
+
+              <textarea
+                placeholder="Descripción breve de la clase"
+                value={modDescripcion}
+                onChange={e => setModDescripcion(e.target.value)}
+                rows="2"
+                style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '4px', border: '1px solid #ccc', resize: 'none' }}
+              />
+
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+                <input
+                  type="text"
+                  placeholder="Badge (Ej. BX)"
+                  value={modBadge}
+                  onChange={e => setModBadge(e.target.value.toUpperCase().substring(0, 4))}
+                  maxLength={4}
+                  style={{ flex: 1 }}
+                />
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '0.9em', color: '#555' }}>Color:</span>
+                  <input
+                    type="color"
+                    value={modColor}
+                    onChange={e => setModColor(e.target.value)}
+                    style={{ width: '40px', height: '36px', padding: 0, border: '1px solid #ccc', borderRadius: '4px', cursor: 'pointer' }}
+                  />
+                </label>
+              </div>
 
               <select value={modInstructorId} onChange={e => setModInstructorId(e.target.value)}>
                 <option value="">Asignar Instructor...</option>
                 {instructores.map(i => <option key={i.id} value={i.id}>{i.nombreCompleto}</option>)}
               </select>
 
-              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px', cursor: 'pointer' }}>
-                <input 
-                  type="checkbox" 
-                  checked={modActivo} 
-                  onChange={e => setModActivo(e.target.checked)} 
-                  style={{ width: 'auto', margin: 0, transform: 'scale(1.2)' }} 
+              <fieldset style={{ marginTop: '15px', padding: '12px', border: '1px solid #ddd', borderRadius: '6px' }}>
+                <legend style={{ fontWeight: 'bold', padding: '0 6px', fontSize: '0.95em' }}>Horarios de la clase</legend>
+
+                {modHorarios.length === 0 && (
+                  <p style={{ color: '#888', fontSize: '0.9em', margin: '8px 0' }}>
+                    Aún no hay horarios. Agrega uno o más.
+                  </p>
+                )}
+
+                {modHorarios.map((h, idx) => (
+                  <div key={idx} style={{ display: 'flex', gap: '6px', marginBottom: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <select
+                      value={h.diaSemana}
+                      onChange={e => actualizarHorario(idx, 'diaSemana', e.target.value)}
+                      style={{ flex: '1 1 110px', margin: 0 }}
+                    >
+                      {DIAS_SEMANA.map(d => <option key={d} value={d}>{d}</option>)}
+                    </select>
+                    <input
+                      type="time"
+                      value={h.horaInicio}
+                      onChange={e => actualizarHorario(idx, 'horaInicio', e.target.value)}
+                      style={{ flex: '0 1 110px', margin: 0 }}
+                      required
+                    />
+                    <span style={{ fontSize: '0.85em', color: '#666' }}>a</span>
+                    <input
+                      type="time"
+                      value={h.horaFin}
+                      onChange={e => actualizarHorario(idx, 'horaFin', e.target.value)}
+                      style={{ flex: '0 1 110px', margin: 0 }}
+                      required
+                    />
+                    <select
+                      value={h.nivel}
+                      onChange={e => actualizarHorario(idx, 'nivel', e.target.value)}
+                      style={{ flex: '1 1 140px', margin: 0 }}
+                    >
+                      {NIVELES.map(n => <option key={n} value={n}>{n}</option>)}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => eliminarHorario(idx)}
+                      style={{ background: '#dc3545', color: 'white', border: 'none', borderRadius: '4px', padding: '6px 10px', cursor: 'pointer', fontSize: '0.85em' }}
+                    >
+                      X
+                    </button>
+                  </div>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={agregarHorario}
+                  style={{ marginTop: '8px', background: '#28a745', color: 'white', border: 'none', borderRadius: '4px', padding: '8px 12px', cursor: 'pointer', fontSize: '0.9em', fontWeight: 'bold' }}
+                >
+                  + Agregar horario
+                </button>
+              </fieldset>
+
+              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '15px', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={modActivo}
+                  onChange={e => setModActivo(e.target.checked)}
+                  style={{ width: 'auto', margin: 0, transform: 'scale(1.2)' }}
                 />
                 <span>Hacer visible esta clase para los clientes</span>
               </label>
 
               <div className="modal-footer">
-                <button type="submit" className="btn-save">Aplicar</button>
+                <button type="submit" className="btn-save">{editandoModuloId ? 'Aplicar Cambios' : 'Crear Clase'}</button>
                 <button type="button" onClick={() => setModalModuloAbierto(false)}>Cerrar</button>
               </div>
             </form>
