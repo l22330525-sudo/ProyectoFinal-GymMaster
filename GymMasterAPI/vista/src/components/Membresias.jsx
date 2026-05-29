@@ -23,6 +23,9 @@ function Membresias() {
   
   const socioNombre = localStorage.getItem('socioNombre');
   const userRol = localStorage.getItem('socioRol');
+  const socioId = localStorage.getItem('socioId');
+
+  const [miEstatusActual, setMiEstatusActual] = useState({ activo: false, membresiaId: null });
 
   const [planSeleccionado, setPlanSeleccionado] = useState(null);
   const [exitoMensaje, setExitoMensaje] = useState('');
@@ -42,8 +45,23 @@ function Membresias() {
       .catch(() => setErrorCarga('No se pudo conectar con el servidor. Verifica que la API esté corriendo.'));
   };
 
+  const verificarEstatusCliente = () => {
+    if (userRol !== 'Admin' && socioId) {
+      fetch(`http://localhost:5027/api/Miembros/${socioId}`)
+        .then(res => res.json())
+        .then(socio => {
+          setMiEstatusActual({
+            activo: socio.estaActivo,
+            membresiaId: socio.membresiaId
+          });
+        })
+        .catch(err => console.log('Error verificando estatus del cliente', err));
+    }
+  };
+
   useEffect(() => {
     cargarPlanes();
+    verificarEstatusCliente();
   }, []);
 
   const handleVolver = () => {
@@ -130,13 +148,34 @@ function Membresias() {
     }
   };
 
-  const confirmarPagoCliente = () => {
-    setExitoMensaje(`¡Listo, ${socioNombre}! Tu ${planSeleccionado.nombre} fue activado.`);
-    setTimeout(() => {
-      setPlanSeleccionado(null);
-      setExitoMensaje('');
-      navigate('/inicio-miembro');
-    }, 3000);
+  const confirmarPagoCliente = async () => {
+    try {
+      const resSocio = await fetch(`http://localhost:5027/api/Miembros/${socioId}`);
+      const socioActual = await resSocio.json();
+      
+      const payloadAct = {
+        ...socioActual,
+        membresiaId: planSeleccionado.id,
+        estaActivo: false
+      };
+
+      await fetch(`http://localhost:5027/api/Miembros/${socioId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payloadAct)
+      });
+
+      setExitoMensaje(`¡Solicitud enviada, ${socioNombre}! Paga tu ${planSeleccionado.nombre} en recepción.`);
+      setTimeout(() => {
+        setPlanSeleccionado(null);
+        setExitoMensaje('');
+        navigate('/inicio-miembro');
+      }, 3000);
+
+    } catch (error) {
+      setExitoMensaje(`¡Solicitud local creada, ${socioNombre}! Ve a recepción.`);
+      setTimeout(() => { navigate('/inicio-miembro'); }, 2000);
+    }
   };
 
   const abrirModalCliente = (plan) => { setExitoMensaje(''); setPlanSeleccionado(plan); };
@@ -145,14 +184,16 @@ function Membresias() {
   if (userRol === 'Admin') {
     return (
       <div className="membresias-page">
-        
-        {}
         <nav className="navbar-admin">
           <div className="logo-gym">GYM <span>MASTER</span></div>
           <div className="nav-actions">
             <div className="tabs-admin">
               <button className="" onClick={() => { localStorage.setItem('admin_tab_activa', 'socios'); navigate('/gestion-recepcion'); }}>Socios</button>
               <button className="" onClick={() => { localStorage.setItem('admin_tab_activa', 'modulos'); navigate('/gestion-recepcion'); }}>Clases</button>
+              
+              {}
+              <button className="" onClick={() => { localStorage.setItem('admin_tab_activa', 'pagos'); navigate('/gestion-recepcion'); }}>Validación Pagos</button>
+              
               <button className="active" onClick={() => navigate('/membresias')}>Membresías</button>
               <button className="" onClick={() => navigate('/gestion-instructores')}>Staff</button>
             </div>
@@ -160,7 +201,7 @@ function Membresias() {
               localStorage.removeItem('socioId');
               localStorage.removeItem('socioNombre');
               localStorage.removeItem('socioRol');
-              localStorage.removeItem('admin_tab_activa'); // Limpiamos pestaña
+              localStorage.removeItem('admin_tab_activa');
               navigate('/login');
             }}>Salir</button>
           </div>
@@ -259,6 +300,10 @@ function Membresias() {
     );
   }
 
+  const miPlanData = miEstatusActual.activo && miEstatusActual.membresiaId 
+    ? planes.find(p => p.id === miEstatusActual.membresiaId) 
+    : null;
+
   return (
     <div className="membresias-page">
       <nav className="membresias-navbar">
@@ -269,38 +314,60 @@ function Membresias() {
       {errorCarga && <div style={{ background: '#dc3545', color: 'white', padding: '12px 20px', textAlign: 'center', fontWeight: 'bold' }}>{errorCarga}</div>}
 
       <div className="membresias-content">
-        <h1 className="membresias-titulo">Nuestros Planes</h1>
-        <p className="membresias-subtitulo">Elige el plan que más se adapte a ti. Los planes con módulo incluyen Boxeo o Zumba.</p>
-
-        {planes.length === 0 && !errorCarga && <p style={{ textAlign: 'center', color: '#aaa' }}>Cargando planes...</p>}
-
-        <div className="membresias-grid">
-          {planes.map((plan) => (
-            <div key={plan.id} className={`plan-card ${plan.conModulo ? 'con-modulo' : ''}`}>
-              <span className="plan-badge" style={{ background: plan.conModulo ? 'rgba(170,59,255,0.3)' : 'rgba(255,255,255,0.1)', color: plan.conModulo ? '#aa3bff' : '#aaa' }}>
-                {plan.badge}
+        {miEstatusActual.activo && miPlanData ? (
+          <div style={{ textAlign: 'center', padding: '40px', background: '#1a1a1a', borderRadius: '15px', border: '1px solid #28a745', maxWidth: '600px', margin: '0 auto' }}>
+            <h1 style={{ color: '#28a745', fontSize: '2.5rem', margin: '0 0 10px' }}>Suscripción Activa</h1>
+            <p style={{ color: '#ccc', fontSize: '1.2rem', marginBottom: '30px' }}>Actualmente estás disfrutando de los beneficios de:</p>
+            
+            <div className={`plan-card ${miPlanData.conModulo ? 'con-modulo' : ''}`} style={{ margin: '0 auto' }}>
+              <span className="plan-badge" style={{ background: miPlanData.conModulo ? 'rgba(170,59,255,0.3)' : 'rgba(255,255,255,0.1)', color: miPlanData.conModulo ? '#aa3bff' : '#aaa' }}>
+                {miPlanData.badge}
               </span>
-              <p className="plan-nombre">{plan.nombre}</p>
-              <p className="plan-precio">${plan.precio} <span>/ {plan.duracion}</span></p>
-              <p className="plan-descripcion">{plan.descripcion}</p>
-              <button className="btn-contratar" onClick={() => abrirModalCliente(plan)}>Contratar Plan</button>
+              <p className="plan-nombre" style={{ fontSize: '2rem' }}>{miPlanData.nombre}</p>
+              <p className="plan-precio">${miPlanData.precio} <span>/ {miPlanData.duracion}</span></p>
+              <p className="plan-descripcion">{miPlanData.descripcion}</p>
+              
+              <div style={{ marginTop: '20px', padding: '15px', background: 'rgba(40, 167, 69, 0.2)', borderRadius: '8px', color: '#28a745', fontWeight: 'bold' }}>
+                Tu plan vencerá en {miPlanData.duracionDias} días a partir de tu último pago.
+              </div>
             </div>
-          ))}
-        </div>
+          </div>
+        ) : (
+          <>
+            <h1 className="membresias-titulo">Nuestros Planes</h1>
+            <p className="membresias-subtitulo">Elige el plan que más se adapte a ti. Los planes con módulo incluyen Boxeo o Zumba.</p>
+
+            {planes.length === 0 && !errorCarga && <p style={{ textAlign: 'center', color: '#aaa' }}>Cargando planes...</p>}
+
+            <div className="membresias-grid">
+              {planes.map((plan) => (
+                <div key={plan.id} className={`plan-card ${plan.conModulo ? 'con-modulo' : ''}`}>
+                  <span className="plan-badge" style={{ background: plan.conModulo ? 'rgba(170,59,255,0.3)' : 'rgba(255,255,255,0.1)', color: plan.conModulo ? '#aa3bff' : '#aaa' }}>
+                    {plan.badge}
+                  </span>
+                  <p className="plan-nombre">{plan.nombre}</p>
+                  <p className="plan-precio">${plan.precio} <span>/ {plan.duracion}</span></p>
+                  <p className="plan-descripcion">{plan.descripcion}</p>
+                  <button className="btn-contratar" onClick={() => abrirModalCliente(plan)}>Contratar Plan</button>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       {planSeleccionado && (
         <div className="modal-overlay" onClick={cerrarModalCliente}>
           <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-            <h2>Confirmar Plan</h2>
-            <p>Estás a punto de contratar el <strong>{planSeleccionado.nombre}</strong> con duración de <strong>{planSeleccionado.duracion}</strong>.</p>
+            <h2>Confirmar Solicitud</h2>
+            <p>Estás a punto de solicitar el <strong>{planSeleccionado.nombre}</strong> con duración de <strong>{planSeleccionado.duracion}</strong>.</p>
             <div className="modal-precio">${planSeleccionado.precio}</div>
-            <p style={{ color: '#888', fontSize: '0.85rem' }}>* El pago se realiza en recepción al presentarte.</p>
+            <p style={{ color: '#888', fontSize: '0.85rem' }}>* Presenta tu código QR en recepción y paga en efectivo para activar tu cuenta.</p>
             {exitoMensaje ? (
-              <p className="exito-mensaje">{exitoMensaje}</p>
+              <p className="exito-mensaje" style={{ color: '#28a745', fontWeight: 'bold' }}>{exitoMensaje}</p>
             ) : (
               <div className="modal-botones">
-                <button className="btn-confirmar-pago" onClick={confirmarPagoCliente}>Confirmar</button>
+                <button className="btn-confirmar-pago" onClick={confirmarPagoCliente}>Generar Código QR</button>
                 <button className="btn-cancelar-pago" onClick={cerrarModalCliente}>Cancelar</button>
               </div>
             )}

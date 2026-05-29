@@ -81,22 +81,23 @@ function GestionInstructores() {
         </div>
       </nav>
 
-      {errorCarga && <div style={{ background: '#dc3545', color: 'white', padding: '12px 20px', textAlign: 'center', fontWeight: 'bold' }}>{errorCarga}</div>}
-
       <div className="recepcion-content">
-        <header className="recepcion-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px', marginBottom: '20px' }}>
-          <div>
-            <h1>Gestión de Instructores</h1>
-            <div className="search-box">
-              <input type="text" placeholder="Buscar instructor por nombre..." onChange={(e) => setBusqueda(e.target.value)} />
-            </div>
-          </div>
-          <button onClick={abrirCrear} style={{ padding: '12px 24px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem' }}>
-            Registrar Nuevo Instructor
-          </button>
-        </header>
+        
+        {}
+        <div className="top-bar" style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <input 
+            type="text" 
+            placeholder="Buscar instructor por nombre..." 
+            value={busqueda} 
+            onChange={(e) => setBusqueda(e.target.value)} 
+            className="main-search"
+          />
+          <button className="btn-add-main" onClick={abrirCrear}>+ Nuevo Instructor</button>
+        </div>
 
-        <section className="tabla-socios">
+        {errorCarga && <div className="error-msg" style={{ marginBottom: '20px' }}>{errorCarga}</div>}
+
+        <section className="table-wrapper">
           <table>
             <thead>
               <tr><th>ID</th><th>Nombre Completo</th><th>Especialidad</th><th>Turno</th><th>Estatus</th><th>Acciones</th></tr>
@@ -104,11 +105,14 @@ function GestionInstructores() {
             <tbody>
               {instructoresFiltrados.map(i => (
                 <tr key={i.id}>
-                  <td>{i.id}</td><td>{i.nombreCompleto}</td><td>{i.especialidad}</td><td>{i.turno}</td>
-                  <td><span className={`badge ${i.estaActivo ? 'activo' : 'vencido'}`}>{i.estaActivo ? 'Activo' : 'Inactivo'}</span></td>
+                  <td>{i.id}</td>
+                  <td><strong>{i.nombreCompleto}</strong></td>
+                  <td>{i.especialidad}</td>
+                  <td>{i.turno}</td>
+                  <td><span className={`status-pill ${i.estaActivo ? 'activo' : 'vencido'}`}>{i.estaActivo ? 'Activo' : 'Inactivo'}</span></td>
                   <td>
-                    <button onClick={() => abrirEditar(i)} style={{ padding: '8px 15px', marginRight: '10px', borderRadius: '5px', border: 'none', backgroundColor: '#ffc107', color: 'black', fontWeight: 'bold', cursor: 'pointer' }}>Editar</button>
-                    <button onClick={() => eliminarInstructor(i.id)} style={{ padding: '8px 15px', borderRadius: '5px', border: 'none', backgroundColor: '#dc3545', color: 'white', fontWeight: 'bold', cursor: 'pointer' }}>Eliminar</button>
+                    <button className="btn-edit" onClick={() => abrirEditar(i)}>Editar</button>
+                    <button className="btn-del" onClick={() => eliminarInstructor(i.id)}>X</button>
                   </td>
                 </tr>
               ))}
@@ -118,28 +122,43 @@ function GestionInstructores() {
       </div>
 
       {modalAbierto && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-          <div style={{ backgroundColor: '#2a2a2a', padding: '30px', borderRadius: '15px', width: '90%', maxWidth: '450px', border: '1px solid #aa3bff', color: 'white' }}>
-            <h2 style={{ color: '#aa3bff', marginTop: 0 }}>{editandoId ? 'Modificar Instructor' : 'Dar de Alta Instructor'}</h2>
-            {mensaje && <p style={{ fontWeight: 'bold', color: mensaje.includes('con éxito') ? '#28a745' : '#dc3545', textAlign: 'center' }}>{mensaje}</p>}
+        <div className="modal-overlay">
+          <div className="modal-box">
+            <h3 style={{ color: '#aa3bff', marginTop: 0 }}>{editandoId ? 'Modificar Instructor' : 'Alta de Instructor'}</h3>
+            {mensaje && <p className="modal-msg" style={{ color: mensaje.includes('con éxito') ? '#28a745' : '#dc3545' }}>{mensaje}</p>}
             <form onSubmit={guardarInstructor} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-              <div><label>Nombre Completo:</label><input type="text" value={nombreCompleto} onChange={e => setNombreCompleto(e.target.value)} required style={{ width: '95%', padding: '10px', borderRadius: '6px', border: '1px solid #555', backgroundColor: '#1a1a1a', color: 'white' }} /></div>
-              <div><label>Especialidad:</label><input type="text" value={especialidad} onChange={e => setEspecialidad(e.target.value)} required placeholder="Ej. Boxeo, Zumba" style={{ width: '95%', padding: '10px', borderRadius: '6px', border: '1px solid #555', backgroundColor: '#1a1a1a', color: 'white' }} /></div>
               <div>
-                <label>Turno:</label>
+                <input type="text" placeholder="Nombre Completo" value={nombreCompleto} onChange={e => setNombreCompleto(e.target.value)} required style={{ width: '95%', padding: '10px', borderRadius: '6px', border: '1px solid #555', backgroundColor: '#1a1a1a', color: 'white' }} />
+              </div>
+              <div>
+                <input type="text" value={especialidad} onChange={e => setEspecialidad(e.target.value)} required placeholder="Especialidad (Ej. Boxeo, Zumba)" style={{ width: '95%', padding: '10px', borderRadius: '6px', border: '1px solid #555', backgroundColor: '#1a1a1a', color: 'white' }} />
+              </div>
+              <div>
                 <select value={turno} onChange={e => setTurno(e.target.value)} required style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #555', backgroundColor: '#1a1a1a', color: 'white' }}>
-                  <option value="">Selecciona un turno</option><option value="Matutino">Matutino</option><option value="Vespertino">Vespertino</option><option value="Matutino y Vespertino">Matutino y Vespertino</option>
+                  <option value="">Selecciona un turno</option>
+                  <option value="Matutino">Matutino</option>
+                  <option value="Vespertino">Vespertino</option>
+                  <option value="Matutino y Vespertino">Matutino y Vespertino</option>
                 </select>
               </div>
+              
               {editandoId && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '5px 0' }}>
-                  <input type="checkbox" id="activoCheckInstructor" checked={estaActivo} onChange={e => setEstaActivo(e.target.checked)} style={{ transform: 'scale(1.2)' }} />
-                  <label htmlFor="activoCheckInstructor" style={{ cursor: 'pointer' }}>Instructor Activo</label>
-                </div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px', cursor: 'pointer' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={estaActivo} 
+                    onChange={e => setEstaActivo(e.target.checked)} 
+                    style={{ width: 'auto', margin: 0, transform: 'scale(1.2)' }} 
+                  />
+                  <span style={{ fontWeight: 'bold', color: estaActivo ? '#28A745' : '#dc3545' }}>
+                    {estaActivo ? 'Estatus: Instructor Activo' : 'Estatus: Instructor Inactivo'}
+                  </span>
+                </label>
               )}
-              <div style={{ display: 'flex', gap: '15px', marginTop: '10px' }}>
-                <button type="submit" style={{ flex: 1, padding: '12px', backgroundColor: '#aa3bff', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>{editandoId ? 'Guardar Cambios' : 'Confirmar Registro'}</button>
-                <button type="button" onClick={() => setModalAbierto(false)} style={{ flex: 1, padding: '12px', backgroundColor: 'transparent', color: '#aaa', border: '1px solid #555', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>Cancelar</button>
+              
+              <div className="modal-footer" style={{ marginTop: '15px' }}>
+                <button type="submit" className="btn-save">{editandoId ? 'Guardar Cambios' : 'Confirmar Registro'}</button>
+                <button type="button" onClick={() => setModalAbierto(false)}>Cerrar</button>
               </div>
             </form>
           </div>
